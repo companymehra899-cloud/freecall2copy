@@ -1348,7 +1348,7 @@ export default function App() {
 
                         {/* TAB 3: SUBSCRIPTION SCREEN */}
                         {currentAppTab === 'SUBSCRIPTION' && (
-                          <div className="px-4 pt-2 pb-4 space-y-3 bg-[#eef3fb] min-h-full">
+                          <div className="px-4 pt-2 pb-5 space-y-3 bg-[#eef3fb] min-h-full">
                             <div className="flex items-start gap-2">
                               <button
                                 onClick={() => setCurrentAppTab('HOME')}
@@ -1656,7 +1656,7 @@ export default function App() {
                       </div>
 
                       {/* Bottom Navigation Bar */}
-                      {currentAppTab === 'SUBSCRIPTION' ? null : (currentAppTab === 'PROFILE' || currentAppTab === 'FRIENDS' || currentAppTab === 'HOME') ? (
+                      {(currentAppTab === 'PROFILE' || currentAppTab === 'FRIENDS' || currentAppTab === 'HOME' || currentAppTab === 'SUBSCRIPTION') ? (
                         <div className="h-[62px] bg-white border-t border-[#eef2f8] px-2 flex items-center justify-around shrink-0 z-10">
                           <button
                             onClick={() => setCurrentAppTab('HOME')}
@@ -1674,9 +1674,9 @@ export default function App() {
                           </button>
                           <button
                             onClick={() => setCurrentAppTab('SUBSCRIPTION')}
-                            className="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-[#9aa3bb]"
+                            className={`flex flex-col items-center gap-0.5 text-[10px] ${currentAppTab === 'SUBSCRIPTION' ? 'font-bold text-[#3d6ef5]' : 'font-semibold text-[#9aa3bb]'}`}
                           >
-                            <BarChart3 className="w-[18px] h-[18px]" strokeWidth={2.2} />
+                            <BarChart3 className="w-[18px] h-[18px]" strokeWidth={2.2} fill={currentAppTab === 'SUBSCRIPTION' ? 'currentColor' : 'none'} />
                             <span>Progress</span>
                           </button>
                           <button
