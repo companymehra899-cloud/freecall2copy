@@ -54,7 +54,13 @@ import {
   Video,
   Gift,
   Play,
-  ChevronLeft
+  ChevronLeft,
+  Flag,
+  MoreHorizontal,
+  Lightbulb,
+  Coffee,
+  Plane,
+  Gamepad2
 } from 'lucide-react';
 
 interface FriendItem {
@@ -98,6 +104,7 @@ export default function App() {
   const [playExpiryDate, setPlayExpiryDate] = useState('05 Feb 2027');
   const [userStreak, setUserStreak] = useState(0);
   const [selectedEnglishLevel, setSelectedEnglishLevel] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Intermediate');
+  const [topicSetIndex, setTopicSetIndex] = useState(0);
 
   // Modal Dialog States
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -434,6 +441,25 @@ export default function App() {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  const isLightPhone = simState !== 'IDLE' || currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION';
+  const topicSets = [
+    [
+      { icon: Coffee, title: 'Daily Life', desc: 'Talk about your routine' },
+      { icon: Plane, title: 'Travel', desc: 'Share your travel experiences' },
+      { icon: Gamepad2, title: 'Hobbies', desc: 'Discuss your interests' }
+    ],
+    [
+      { icon: BookOpen, title: 'Job Interview', desc: 'Tell me about yourself' },
+      { icon: Globe, title: 'Culture', desc: 'Food, festivals & cities' },
+      { icon: Headphones, title: 'Music', desc: 'Songs that you love' }
+    ]
+  ];
+  const activeTopics = topicSets[topicSetIndex % topicSets.length];
+  const partnerFirstName = currentPartnerName.split(' ')[0] || 'Alex';
+  const partnerLocation = currentPartnerName.includes('(')
+    ? currentPartnerName.slice(currentPartnerName.indexOf('(') + 1, currentPartnerName.indexOf(')'))
+    : 'USA';
+
   return (
     <div className="min-h-screen bg-[#080a0e] text-slate-100 flex flex-col selection:bg-emerald-500/20 selection:text-emerald-300">
       {/* Top Navigation Header */}
@@ -544,190 +570,284 @@ export default function App() {
               <div className="w-full max-w-[360px] h-[720px] bg-[#0b0e14] rounded-[44px] border-[6px] border-slate-800 shadow-2xl shadow-emerald-950/20 overflow-hidden relative flex flex-col select-none ring-1 ring-white/10">
                 
                 {/* Phone Top Notch Bar */}
-                <div className={`h-7 w-full flex items-center justify-between px-6 pt-2 z-30 ${simState === 'IDLE' && (currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION') ? 'bg-[#eef3fb]' : 'bg-[#0b0e14]'}`}>
-                  <span className={`text-[11px] font-semibold ${simState === 'IDLE' && (currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION') ? 'text-slate-800' : 'text-slate-300'}`}>9:41</span>
-                  <div className={`w-16 h-3.5 rounded-full mx-auto ${simState === 'IDLE' && (currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION') ? 'bg-slate-900/80' : 'bg-black'}`} />
-                  <div className={`flex items-center gap-1.5 text-[10px] ${simState === 'IDLE' && (currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION') ? 'text-slate-800' : 'text-slate-300'}`}>
-                    <span className={`font-bold ${simState === 'IDLE' && (currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION') ? 'text-slate-800' : 'text-emerald-400'}`}>5G</span>
-                    <div className={`w-3.5 h-2 border rounded-xs flex items-center p-0.5 ${simState === 'IDLE' && (currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION') ? 'border-slate-700' : 'border-slate-400'}`}>
-                      <div className={`w-full h-full ${simState === 'IDLE' && (currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION') ? 'bg-slate-800' : 'bg-emerald-400'}`} />
+                <div className={`h-7 w-full flex items-center justify-between px-6 pt-2 z-30 ${isLightPhone ? 'bg-[#eef3fb]' : 'bg-[#0b0e14]'}`}>
+                  <span className={`text-[11px] font-semibold ${isLightPhone ? 'text-slate-800' : 'text-slate-300'}`}>9:41</span>
+                  <div className={`w-16 h-3.5 rounded-full mx-auto ${isLightPhone ? 'bg-slate-900/80' : 'bg-black'}`} />
+                  <div className={`flex items-center gap-1.5 text-[10px] ${isLightPhone ? 'text-slate-800' : 'text-slate-300'}`}>
+                    <span className={`font-bold ${isLightPhone ? 'text-slate-800' : 'text-emerald-400'}`}>5G</span>
+                    <div className={`w-3.5 h-2 border rounded-xs flex items-center p-0.5 ${isLightPhone ? 'border-slate-700' : 'border-slate-400'}`}>
+                      <div className={`w-full h-full ${isLightPhone ? 'bg-slate-800' : 'bg-emerald-400'}`} />
                     </div>
                   </div>
                 </div>
 
                 {/* Main Inside Phone Container */}
-                <div className={`flex-1 flex flex-col relative overflow-hidden ${simState === 'IDLE' && (currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION') ? 'bg-[#eef3fb]' : 'bg-[#0a0d13]'}`}>
+                <div className={`flex-1 flex flex-col relative overflow-hidden ${isLightPhone ? 'bg-[#eef3fb]' : 'bg-[#0a0d13]'}`}>
                   
                   {/* Active Call / Searching Overlay */}
                   {simState !== 'IDLE' ? (
-                    <div className="flex-1 flex flex-col justify-between p-6 bg-gradient-to-b from-[#0c1017] via-[#090d14] to-[#0c1017] z-20">
+                    <div className="flex-1 flex flex-col bg-[#eef3fb] z-20 overflow-hidden">
                       
                       {simState === 'SEARCHING' && (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center">
-                          <div className="relative flex items-center justify-center my-8">
-                            <div className="absolute w-44 h-44 rounded-full border-2 border-emerald-400/20 animate-ping" style={{ animationDuration: '2s' }} />
-                            <div className="absolute w-32 h-32 rounded-full border border-emerald-400/40 animate-pulse" />
-                            <div className="w-24 h-24 rounded-full bg-slate-900 border-2 border-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                              <Radio className="w-8 h-8 text-emerald-400 animate-spin" style={{ animationDuration: '8s' }} />
+                        <div className="flex-1 flex flex-col px-4 pt-3 pb-5">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-1">
+                              <button
+                                onClick={handleCancelSearch}
+                                className="mt-0.5 w-8 h-8 rounded-full flex items-center justify-center text-[#1b2559]"
+                              >
+                                <ChevronLeft className="w-5 h-5" strokeWidth={2.4} />
+                              </button>
+                              <div>
+                                <h2 className="text-[20px] leading-none font-extrabold text-[#1b2559]">Live Practice Call</h2>
+                                <p className="text-[11px] text-[#8b95b7] mt-1.5 font-medium">Talk • Practice • Improve</p>
+                              </div>
                             </div>
+                            <button
+                              onClick={handleCancelSearch}
+                              className="px-3 py-1.5 rounded-full bg-[#ffe8f0] text-[#f43f5e] text-[11px] font-bold flex items-center gap-1"
+                            >
+                              <Flag className="w-3 h-3" />
+                              End Practice
+                            </button>
                           </div>
-
-                          <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20 mb-2">
-                            Matching Level: {selectedEnglishLevel}
-                          </span>
-                          <h3 className="text-lg font-bold text-white">Searching for Partner...</h3>
-                          <p className="text-xs text-slate-400 mt-1">Connecting with an active learner worldwide ({searchSecs}s)</p>
-
-                          <button
-                            onClick={handleCancelSearch}
-                            className="mt-8 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-white transition-all cursor-pointer"
-                          >
-                            Cancel Search
-                          </button>
+                          <div className="flex-1 flex flex-col items-center justify-center text-center">
+                            <div className="relative flex items-center justify-center my-4">
+                              <div className="absolute w-36 h-36 rounded-full border-2 border-[#3d6ef5]/20 animate-ping" style={{ animationDuration: '2s' }} />
+                              <div className="w-[88px] h-[88px] rounded-full bg-white border-[3px] border-[#d6e4ff] flex items-center justify-center shadow-sm">
+                                <Radio className="w-8 h-8 text-[#3d6ef5] animate-spin" style={{ animationDuration: '8s' }} />
+                              </div>
+                            </div>
+                            <span className="px-3 py-1 rounded-full bg-[#e8f0ff] text-[#3d6ef5] text-[11px] font-bold mb-2">
+                              Matching Level: {selectedEnglishLevel}
+                            </span>
+                            <h3 className="text-[16px] font-extrabold text-[#1b2559]">Searching for Partner...</h3>
+                            <p className="text-[11px] text-[#8b95b7] mt-1">Connecting with an active learner ({searchSecs}s)</p>
+                            <button
+                              onClick={handleCancelSearch}
+                              className="mt-6 px-5 py-2.5 rounded-full bg-white text-[#1b2559] text-xs font-bold shadow-sm"
+                            >
+                              Cancel Search
+                            </button>
+                          </div>
                         </div>
                       )}
 
                       {simState === 'CONNECTING' && (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center">
-                          <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center mb-4">
-                            <Zap className="w-9 h-9 text-emerald-400 animate-bounce" />
+                        <div className="flex-1 flex flex-col px-4 pt-3 pb-5">
+                          <div className="flex items-start gap-1">
+                            <button
+                              onClick={() => handleEndCall(false)}
+                              className="mt-0.5 w-8 h-8 rounded-full flex items-center justify-center text-[#1b2559]"
+                            >
+                              <ChevronLeft className="w-5 h-5" strokeWidth={2.4} />
+                            </button>
+                            <div>
+                              <h2 className="text-[20px] leading-none font-extrabold text-[#1b2559]">Live Practice Call</h2>
+                              <p className="text-[11px] text-[#8b95b7] mt-1.5 font-medium">Talk • Practice • Improve</p>
+                            </div>
                           </div>
-                          <h3 className="text-base font-bold text-white">Connecting with {currentPartnerName}...</h3>
-                          <p className="text-xs text-slate-400 mt-1">Establishing secure voice connection...</p>
+                          <div className="flex-1 flex flex-col items-center justify-center text-center">
+                            <div className="w-[88px] h-[88px] rounded-full bg-white p-[3px] shadow-sm mb-3 overflow-hidden">
+                              <img src="/avatar-anand.svg" alt="" className="w-full h-full object-cover rounded-full bg-[#d6ecff]" />
+                            </div>
+                            <h3 className="text-[16px] font-extrabold text-[#1b2559]">Connecting with {partnerFirstName}...</h3>
+                            <p className="text-[11px] text-[#8b95b7] mt-1">Establishing secure voice connection...</p>
+                          </div>
                         </div>
                       )}
 
                       {simState === 'IN_CALL' && (
-                        <div className="flex-1 flex flex-col items-center justify-between py-2">
-                          <div className="text-center mt-1 w-full flex flex-col items-center">
-                            {/* Free 10-Min Limit / VIP Indicator (Small Timer) */}
-                            {!isProUser ? (
-                              <div className="px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 border transition-all bg-emerald-500/10 text-emerald-300 border-emerald-500/20 shadow-sm">
-                                <span>⏱️ Free Call (Max 10 min) • {formatTimer(Math.max(0, 600 - callSecs))} left</span>
+                        <div className="flex-1 flex flex-col px-3.5 pt-2 pb-3 overflow-y-auto">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-0.5 min-w-0">
+                              <button
+                                onClick={() => handleEndCall(false)}
+                                className="mt-0.5 w-7 h-7 rounded-full flex items-center justify-center text-[#1b2559] shrink-0"
+                              >
+                                <ChevronLeft className="w-5 h-5" strokeWidth={2.4} />
+                              </button>
+                              <div className="min-w-0">
+                                <h2 className="text-[18px] leading-none font-extrabold text-[#1b2559]">Live Practice Call</h2>
+                                <p className="text-[10px] text-[#8b95b7] mt-1 font-medium">Talk • Practice • Improve</p>
                               </div>
-                            ) : (
-                              <div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-sm">
-                                <Crown className="w-3.5 h-3.5" />
-                                <span>VIP PRO: Unlimited Non-Stop Call</span>
-                              </div>
-                            )}
-
-                            {/* Testing Simulator Speed Controls */}
-                            {!isProUser && (
-                              <div className="flex items-center gap-1.5 mt-2 bg-slate-900/90 px-2 py-1 rounded-lg border border-slate-800 text-[10px]">
-                                <span className="text-slate-500">Test Limit:</span>
-                                <button
-                                  onClick={() => handleFastForward(300)}
-                                  className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white"
-                                  title="Add 5 Minutes"
-                                >
-                                  +5m
-                                </button>
-                                <button
-                                  onClick={handleJumpToLimit}
-                                  className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-slate-950 font-semibold"
-                                  title="Jump to 9m 50s to see 10m disconnect"
-                                >
-                                  ⚡ Jump to 09:50
-                                </button>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex flex-col items-center my-auto">
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 border-4 border-slate-800 flex items-center justify-center shadow-xl shadow-emerald-950/40 text-2xl font-bold text-slate-950">
-                              {currentPartnerName.charAt(0)}
                             </div>
-                            <h4 className="text-sm font-bold text-white mt-2.5">{currentPartnerName}</h4>
-
-                            {/* Audio Waveform Bars */}
-                            <div className="flex items-center gap-1.5 h-8 mt-3">
-                              {[16, 28, 44, 20, 36, 18, 32, 22].map((h, i) => (
-                                <div
-                                  key={i}
-                                  className="w-1.5 bg-emerald-400 rounded-full transition-all duration-150 animate-pulse"
-                                  style={{
-                                    height: isMuted ? '4px' : `${h}px`,
-                                    opacity: isMuted ? 0.3 : 1,
-                                    animationDelay: `${i * 100}ms`
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* In-Call Controls */}
-                          <div className="w-full flex items-center justify-around px-4 pb-7 pt-2">
-                            <button
-                              onClick={() => setIsSpeaker(!isSpeaker)}
-                              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                                isSpeaker ? 'bg-slate-800 text-white border border-slate-700' : 'bg-slate-900 text-slate-500'
-                              }`}
-                            >
-                              {isSpeaker ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-                            </button>
-
                             <button
                               onClick={() => handleEndCall(false)}
-                              className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-xl shadow-red-500/40 flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
+                              className="shrink-0 px-2.5 py-1.5 rounded-full bg-[#ffe8f0] text-[#f43f5e] text-[10px] font-bold flex items-center gap-1"
                             >
-                              <PhoneOff className="w-7 h-7" />
-                            </button>
-
-                            <button
-                              onClick={() => setIsMuted(!isMuted)}
-                              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                                !isMuted ? 'bg-slate-800 text-white border border-slate-700' : 'bg-red-500/20 text-red-400 border border-red-500/40'
-                              }`}
-                            >
-                              {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                              <Flag className="w-3 h-3" />
+                              End Practice
                             </button>
                           </div>
+
+                          <div className="flex flex-col items-center pt-3 pb-2">
+                            <div className="relative flex items-center justify-center">
+                              <div className="absolute left-[-38px] flex items-end gap-[3px] h-8">
+                                {[10, 18, 12, 22, 14].map((h, i) => (
+                                  <div
+                                    key={`l-${i}`}
+                                    className="w-[3px] rounded-full bg-[#8bb4ff] animate-pulse"
+                                    style={{ height: isMuted ? '4px' : `${h}px`, animationDelay: `${i * 120}ms` }}
+                                  />
+                                ))}
+                              </div>
+                              <div className="w-[86px] h-[86px] rounded-full bg-white p-[3px] shadow-[0_8px_20px_rgba(80,120,200,0.12)]">
+                                <div className="w-full h-full rounded-full overflow-hidden bg-[#d6ecff]">
+                                  <img src="/avatar-anand.svg" alt={partnerFirstName} className="w-full h-full object-cover" />
+                                </div>
+                              </div>
+                              <div className="absolute right-[-38px] flex items-end gap-[3px] h-8">
+                                {[14, 22, 12, 18, 10].map((h, i) => (
+                                  <div
+                                    key={`r-${i}`}
+                                    className="w-[3px] rounded-full bg-[#8bb4ff] animate-pulse"
+                                    style={{ height: isMuted ? '4px' : `${h}px`, animationDelay: `${i * 120}ms` }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <h3 className="text-[20px] font-extrabold text-[#1b2559] mt-2.5 leading-none">{partnerFirstName}</h3>
+                            <p className="text-[11px] text-[#8b95b7] mt-1.5 font-medium">{partnerLocation}</p>
+                            <span className="mt-2 px-3 py-1 rounded-full bg-[#e6f8ef] text-[#22c55e] text-[11px] font-bold flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
+                              Connected
+                            </span>
+                            <p className="text-[22px] font-extrabold text-[#1b2559] mt-2.5 tracking-tight">{formatTimer(callSecs)}</p>
+                            <p className="text-[11px] text-[#8b95b7] mt-0.5">Keep the conversation going!</p>
+                            {!isProUser && (
+                              <p className="text-[9px] text-[#8b95b7] mt-1">Free • {formatTimer(Math.max(0, 600 - callSecs))} left</p>
+                            )}
+                          </div>
+
+                          <div className="rounded-[18px] bg-white/90 border border-white shadow-[0_8px_20px_rgba(80,120,200,0.06)] p-2.5">
+                            <div className="flex items-center justify-between mb-2 px-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <MessageSquare className="w-3.5 h-3.5 text-[#7b61ff]" />
+                                <span className="text-[12px] font-extrabold text-[#1b2559]">Suggested Topics</span>
+                              </div>
+                              <button
+                                onClick={() => setTopicSetIndex(prev => prev + 1)}
+                                className="flex items-center gap-1 text-[10px] font-bold text-[#3d6ef5]"
+                              >
+                                <RefreshCw className="w-3 h-3" />
+                                Change
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {activeTopics.map(topic => {
+                                const TopicIcon = topic.icon;
+                                return (
+                                  <div key={topic.title} className="rounded-[14px] bg-[#f7f9fd] border border-[#eef2f8] px-1.5 py-2 text-center">
+                                    <div className="w-8 h-8 mx-auto rounded-xl bg-white flex items-center justify-center text-[#3d6ef5] mb-1">
+                                      <TopicIcon className="w-4 h-4" />
+                                    </div>
+                                    <p className="text-[10px] font-extrabold text-[#1b2559] leading-tight">{topic.title}</p>
+                                    <p className="text-[8px] text-[#8b95b7] mt-0.5 leading-tight">{topic.desc}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="flex items-end justify-between px-1 pt-3 pb-1">
+                            <button onClick={() => setIsMuted(!isMuted)} className="flex flex-col items-center gap-1 w-[52px]">
+                              <div className={`w-11 h-11 rounded-full flex items-center justify-center ${isMuted ? 'bg-[#ffe8ee] text-[#f43f5e]' : 'bg-[#eef3fb] text-[#5b6b8c]'}`}>
+                                {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                              </div>
+                              <span className="text-[10px] font-semibold text-[#8b95b7]">Mute</span>
+                            </button>
+                            <button onClick={() => setIsSpeaker(!isSpeaker)} className="flex flex-col items-center gap-1 w-[52px]">
+                              <div className={`w-11 h-11 rounded-full flex items-center justify-center ${isSpeaker ? 'bg-[#e8f0ff] text-[#3d6ef5]' : 'bg-[#eef3fb] text-[#5b6b8c]'}`}>
+                                {isSpeaker ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                              </div>
+                              <span className="text-[10px] font-semibold text-[#8b95b7]">Speaker</span>
+                            </button>
+                            <button onClick={() => handleEndCall(false)} className="flex flex-col items-center gap-1 w-[64px]">
+                              <div className="w-14 h-14 rounded-full bg-[#ff3b30] text-white flex items-center justify-center shadow-[0_8px_16px_rgba(255,59,48,0.35)]">
+                                <PhoneOff className="w-6 h-6" />
+                              </div>
+                              <span className="text-[10px] font-bold text-[#1b2559]">End Call</span>
+                            </button>
+                            <button className="flex flex-col items-center gap-1 w-[52px]">
+                              <div className="w-11 h-11 rounded-full bg-[#eef3fb] text-[#5b6b8c] flex items-center justify-center">
+                                <MoreHorizontal className="w-5 h-5" />
+                              </div>
+                              <span className="text-[10px] font-semibold text-[#8b95b7]">More</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                const friend = friendsList[0];
+                                if (friend) handleOpenChat(friend);
+                              }}
+                              className="flex flex-col items-center gap-1 w-[52px]"
+                            >
+                              <div className="w-11 h-11 rounded-full bg-[#eef3fb] text-[#5b6b8c] flex items-center justify-center">
+                                <MessageSquare className="w-5 h-5" />
+                              </div>
+                              <span className="text-[10px] font-semibold text-[#8b95b7]">Chat</span>
+                            </button>
+                          </div>
+
+                          <button className="mt-2 rounded-[16px] bg-[#f3f7ff] border border-[#e8eef8] px-3 py-2.5 flex items-center gap-2 text-left">
+                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#3d6ef5] shrink-0">
+                              <Lightbulb className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-extrabold text-[#1b2559]">Tip for Better Practice</p>
+                              <p className="text-[9px] text-[#8b95b7] leading-snug">Try to speak in complete sentences and don't worry about mistakes!</p>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-[#c5cde0] shrink-0" />
+                          </button>
                         </div>
                       )}
 
                       {simState === 'ENDED' && (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center px-5">
                           {isLimitReached ? (
                             <div className="w-full flex flex-col items-center space-y-3">
-                              <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-lg">
+                              <div className="w-16 h-16 rounded-full bg-[#fff4d6] flex items-center justify-center text-[#f5a623]">
                                 <Crown className="w-8 h-8" />
                               </div>
-                              <h3 className="text-base font-bold text-white">10-Minute Free Call Ended</h3>
-                              <p className="text-xs text-slate-300 leading-relaxed max-w-[280px]">
-                                Free users can speak for <strong>up to 10 mins per call</strong>. Calling is 100% UNLIMITED — start your next free call instantly or unlock non-stop calls with VIP Pass!
+                              <h3 className="text-base font-extrabold text-[#1b2559]">10-Minute Free Call Ended</h3>
+                              <p className="text-xs text-[#8b95b7] leading-relaxed max-w-[280px]">
+                                Free users can speak for <strong className="text-[#1b2559]">up to 10 mins per call</strong>. Start your next free call instantly or unlock non-stop calls with VIP Pass!
                               </p>
-
                               <div className="w-full space-y-2 pt-2">
                                 <button
                                   onClick={() => {
                                     setSimState('IDLE');
                                     handleStartSearch();
                                   }}
-                                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all shadow"
+                                  className="w-full py-2.5 rounded-xl bg-[#3d6ef5] text-white text-xs font-bold"
                                 >
-                                  🎙️ Start Next Free Call
+                                  Start Next Free Call
                                 </button>
-
                                 <button
                                   onClick={() => {
                                     setSimState('IDLE');
                                     setCurrentAppTab('SUBSCRIPTION');
                                   }}
-                                  className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-amber-300 text-xs font-semibold transition-all flex items-center justify-center gap-1"
+                                  className="w-full py-2.5 rounded-xl bg-white border border-[#e6edf8] text-[#1b2559] text-xs font-semibold flex items-center justify-center gap-1"
                                 >
-                                  <Crown className="w-3.5 h-3.5" />
+                                  <Crown className="w-3.5 h-3.5 text-[#f5a623]" />
                                   <span>Remove 10-Min Limit (₹100 / 5 Mo)</span>
                                 </button>
                               </div>
                             </div>
                           ) : (
                             <div>
-                              <div className="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mb-3 mx-auto">
-                                <PhoneOff className="w-7 h-7 text-red-400" />
+                              <div className="w-16 h-16 rounded-full bg-white border border-[#e6edf8] flex items-center justify-center mb-3 mx-auto">
+                                <PhoneOff className="w-7 h-7 text-[#f43f5e]" />
                               </div>
-                              <h3 className="text-base font-bold text-white">Call Ended</h3>
-                              <p className="text-xs text-slate-400 mt-1">Duration: {formatTimer(callSecs)} • Free Session</p>
+                              <h3 className="text-base font-extrabold text-[#1b2559]">Call Ended</h3>
+                              <p className="text-xs text-[#8b95b7] mt-1">Duration: {formatTimer(callSecs)} • Free Session</p>
+                              <button
+                                onClick={() => setSimState('IDLE')}
+                                className="mt-4 px-5 py-2 rounded-full bg-[#3d6ef5] text-white text-xs font-bold"
+                              >
+                                Back Home
+                              </button>
                             </div>
                           )}
                         </div>
