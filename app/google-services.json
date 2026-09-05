@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "723204392079",
+    "firebase_url": "https://freecall-f67d9-default-rtdb.firebaseio.com",
+    "project_id": "freecall-f67d9",
+    "storage_bucket": "freecall-f67d9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:723204392079:android:ede1699094c6aaa2f4dcfa",
+        "android_client_info": {
+          "package_name": "com.speakfreeenglish.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAASS5yL_XXkPIMxzapmd6BtiRIQPpaKyk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

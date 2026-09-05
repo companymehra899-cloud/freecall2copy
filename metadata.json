@@ -1,0 +1,7 @@
+{
+  "name": "SpeakFree P2P",
+  "description": "Zero-cost anonymous English speaking partner app using Jetpack Compose, Native WebRTC P2P audio, and Firestore signaling.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
