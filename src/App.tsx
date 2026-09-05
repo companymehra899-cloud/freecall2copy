@@ -1127,7 +1127,7 @@ export default function App() {
                                 <button onClick={handleStartSearch} className="rounded-[18px] bg-[#fff0f4] px-3 py-3 text-left">
                                   <Coffee className="w-5 h-5 text-[#f43f5e]" />
                                   <p className="text-[12px] font-extrabold text-[#1b2559] mt-2 leading-tight">Daily Life</p>
-                                  <p className="text-[10px] text-[#8b95b7] mt-0.5">15 lessons</p>
+                                  <p className="text-[10px] text-[#8b95b7] mt-0.5">8 lessons</p>
                                 </button>
                                 <button onClick={handleStartSearch} className="rounded-[18px] bg-[#fff8e8] px-3 py-3 text-left">
                                   <GraduationCap className="w-5 h-5 text-[#f5a623]" />
@@ -1664,13 +1664,6 @@ export default function App() {
                           >
                             <Home className="w-[18px] h-[18px]" strokeWidth={2.4} fill={currentAppTab === 'HOME' ? 'currentColor' : 'none'} />
                             <span>Home</span>
-                          </button>
-                          <button
-                            onClick={() => setCurrentAppTab('HOME')}
-                            className="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-[#9aa3bb]"
-                          >
-                            <Mic className="w-[18px] h-[18px]" strokeWidth={2.2} />
-                            <span>Practice</span>
                           </button>
                           <button
                             onClick={() => setCurrentAppTab('FRIENDS')}
