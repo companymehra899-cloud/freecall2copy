@@ -61,7 +61,10 @@ import {
   Coffee,
   Plane,
   Gamepad2,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Briefcase,
+  GraduationCap,
+  Target
 } from 'lucide-react';
 
 interface FriendItem {
@@ -453,7 +456,7 @@ export default function App() {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const isLightPhone = simState !== 'IDLE' || currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION' || currentAppTab === 'FRIENDS';
+  const isLightPhone = simState !== 'IDLE' || currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION' || currentAppTab === 'FRIENDS' || currentAppTab === 'HOME';
   const topicSets = [
     [
       { icon: Coffee, title: 'Daily Life', desc: 'Talk about your routine' },
@@ -870,7 +873,7 @@ export default function App() {
                     <div className="flex-1 flex flex-col overflow-hidden">
                       
                       {/* App Top Bar */}
-                      <div className={`px-4 py-3 border-b flex items-center justify-between z-10 shrink-0 ${currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION' || currentAppTab === 'FRIENDS' ? 'hidden' : 'bg-[#0d1017] border-slate-800/80'}`}>
+                      <div className={`px-4 py-3 border-b flex items-center justify-between z-10 shrink-0 ${currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION' || currentAppTab === 'FRIENDS' || currentAppTab === 'HOME' ? 'hidden' : 'bg-[#0d1017] border-slate-800/80'}`}>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setCurrentAppTab('PROFILE')}
@@ -900,121 +903,132 @@ export default function App() {
                       </div>
 
                       {/* Screen Content Body */}
-                      <div className={`flex-1 overflow-y-auto ${currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION' || currentAppTab === 'FRIENDS' ? 'p-0 space-y-0' : 'p-4 space-y-4'}`}>
+                      <div className={`flex-1 overflow-y-auto ${currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION' || currentAppTab === 'FRIENDS' || currentAppTab === 'HOME' ? 'p-0 space-y-0' : 'p-4 space-y-4'}`}>
                         
                         {/* TAB 1: HOME SCREEN */}
                         {currentAppTab === 'HOME' && (
-                          <div className="space-y-3.5">
-                            {/* App Identity Brand Card */}
-                            <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-gradient-to-r from-sky-950/40 via-slate-900/60 to-slate-900/40 border border-sky-500/20">
-                              <img src="/logo.png" alt="SpeakFree" className="w-11 h-11 rounded-xl shadow-md border border-sky-400/30 object-cover shrink-0" />
-                              <div className="min-w-0">
-                                <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                                  SpeakFree
-                                  <span className="px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 text-[9px] font-bold border border-sky-500/30">Live P2P</span>
-                                </h4>
-                                <p className="text-[10px] text-slate-400 truncate">Practice spoken English with real partners</p>
+                          <div className="px-3.5 pt-3 pb-3 space-y-3 bg-[#eef3fb] min-h-full">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h2 className="text-[22px] leading-none font-extrabold text-[#1b2559] tracking-tight">Hello, {isLoggedIn ? userName.split(' ')[0] : 'Learner'}!</h2>
+                                <p className="text-[11px] text-[#8b95b7] mt-1.5 font-medium">Let's speak, practice and grow together</p>
                               </div>
-                            </div>
-
-                            {/* Live Online Badge */}
-                            <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
-                              <div className="flex items-center gap-2 text-emerald-400 font-medium">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                <span>1,480+ Learners Active Online</span>
-                              </div>
-                              <span className="text-[10px] text-emerald-300 font-mono">Instant Match</span>
-                            </div>
-
-                            {/* Main Pulse Action: Find Speaking Partner */}
-                            <div className="p-5 rounded-2xl bg-gradient-to-b from-[#11151f] to-[#0d1017] border border-slate-800 text-center flex flex-col items-center shadow-lg">
-                              <div className="relative flex items-center justify-center my-4">
-                                <div className="absolute w-36 h-36 rounded-full bg-emerald-500/10 animate-ping" style={{ animationDuration: '3s' }} />
-                                <div className="absolute w-28 h-28 rounded-full border border-emerald-500/30 animate-pulse" />
-                                
+                              <div className="flex items-center gap-2">
+                                <div className="h-9 px-2.5 rounded-full bg-white shadow-[0_4px_14px_rgba(59,99,237,0.08)] flex items-center gap-1 text-[12px] font-extrabold text-[#1b2559]">
+                                  <Flame className="w-3.5 h-3.5 text-[#f97316] fill-[#f97316]" />
+                                  {userStreak || 7}
+                                </div>
                                 <button
-                                  onClick={handleStartSearch}
-                                  className="w-24 h-24 rounded-full bg-gradient-to-b from-slate-800 to-slate-950 border-2 border-emerald-400 shadow-lg shadow-emerald-500/20 flex flex-col items-center justify-center gap-1 cursor-pointer hover:scale-105 active:scale-95 transition-all group"
+                                  onClick={() => setCurrentAppTab('PROFILE')}
+                                  className="w-9 h-9 rounded-full bg-white shadow-[0_4px_14px_rgba(59,99,237,0.08)] flex items-center justify-center text-[#5b6b8c] overflow-hidden"
                                 >
-                                  <Mic className="w-7 h-7 text-emerald-400 group-hover:scale-110 transition-transform" />
-                                  <span className="text-[11px] font-bold text-white">Find Partner</span>
+                                  {profileImage ? (
+                                    <img src={profileImage} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <User className="w-4 h-4" />
+                                  )}
                                 </button>
                               </div>
+                            </div>
 
-                              <h3 className="text-sm font-bold text-white">Anonymous English Practice</h3>
-                              <p className="text-[11px] text-slate-400 mt-1 max-w-[240px]">
-                                Tap button above to instantly talk with a random English learner worldwide.
-                              </p>
-
-                              {/* English Level Selector */}
-                              <div className="w-full mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                                <span className="text-slate-400 text-[11px]">Your Level:</span>
-                                <div className="flex items-center gap-1">
-                                  {(['Beginner', 'Intermediate', 'Advanced'] as const).map(lvl => (
-                                    <button
-                                      key={lvl}
-                                      onClick={() => setSelectedEnglishLevel(lvl)}
-                                      className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all ${
-                                        selectedEnglishLevel === lvl
-                                          ? 'bg-emerald-500 text-slate-950 font-bold'
-                                          : 'bg-slate-800 text-slate-400 hover:text-white'
-                                      }`}
-                                    >
-                                      {lvl}
-                                    </button>
-                                  ))}
-                                </div>
+                            <div className="rounded-[22px] bg-gradient-to-r from-[#eaf3ff] to-[#f4f8ff] border border-white shadow-[0_8px_24px_rgba(80,120,200,0.08)] p-3.5 relative overflow-hidden min-h-[168px]">
+                              <div className="pr-[118px]">
+                                <p className="text-[9px] font-bold tracking-[0.14em] text-[#8b95b7] uppercase">Speak Confidently</p>
+                                <h3 className="text-[18px] font-extrabold text-[#1b2559] leading-tight mt-1">Practice Speaking Without Fear</h3>
+                                <p className="text-[11px] text-[#8b95b7] mt-1.5 leading-snug">Improve your English speaking skills with real conversations and fun practice sessions.</p>
+                                <button
+                                  onClick={handleStartSearch}
+                                  className="mt-3 px-4 py-2 rounded-full bg-[#3d6ef5] text-white text-[12px] font-bold inline-flex items-center gap-1.5 shadow-[0_8px_16px_rgba(61,110,245,0.28)]"
+                                >
+                                  Start Speaking
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <div className="absolute right-1 bottom-0 w-[120px] flex flex-col items-center">
+                                <span className="absolute top-2 right-2 text-[9px] font-extrabold italic text-[#3d6ef5] leading-tight text-right">Better English<br />Brighter You!</span>
+                                <img src="/avatar-anand.svg" alt="" className="w-[108px] h-[108px] object-contain mt-6" />
                               </div>
                             </div>
 
-                            {/* Today's Conversation Starters */}
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                                  <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
-                                  Today's Topic Cards
-                                </h4>
-                                <span className="text-[10px] text-slate-500">Icebreakers</span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <button onClick={handleStartSearch} className="flex flex-col items-center text-center">
+                                <div className="w-12 h-12 rounded-2xl bg-[#ffe4ee] flex items-center justify-center text-[#f43f5e]">
+                                  <Users className="w-5 h-5" />
+                                </div>
+                                <p className="text-[11px] font-extrabold text-[#1b2559] mt-1.5 leading-tight">Real Situations</p>
+                                <p className="text-[9px] text-[#8b95b7] mt-0.5">Daily life topics</p>
+                              </button>
+                              <button onClick={handleStartSearch} className="flex flex-col items-center text-center">
+                                <div className="w-12 h-12 rounded-2xl bg-[#fff4d6] flex items-center justify-center text-[#f5a623]">
+                                  <BookOpen className="w-5 h-5" />
+                                </div>
+                                <p className="text-[11px] font-extrabold text-[#1b2559] mt-1.5 leading-tight">Learn Phrases</p>
+                                <p className="text-[9px] text-[#8b95b7] mt-0.5">Useful sentences</p>
+                              </button>
+                              <button onClick={() => setCurrentAppTab('PROFILE')} className="flex flex-col items-center text-center">
+                                <div className="w-12 h-12 rounded-2xl bg-[#ece8ff] flex items-center justify-center text-[#7b61ff]">
+                                  <BarChart3 className="w-5 h-5" />
+                                </div>
+                                <p className="text-[11px] font-extrabold text-[#1b2559] mt-1.5 leading-tight">Track Progress</p>
+                                <p className="text-[9px] text-[#8b95b7] mt-0.5">See your growth</p>
+                              </button>
+                            </div>
+
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-[15px] font-extrabold text-[#1b2559]">Practice by Category</h4>
+                                <button className="text-[11px] font-bold text-[#3d6ef5] flex items-center gap-0.5">
+                                  See All <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
                               </div>
-
-                              <div className="grid grid-cols-1 gap-2">
-                                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-                                  <div>
-                                    <h5 className="text-xs font-bold text-white">💼 Job Interview Practice</h5>
-                                    <p className="text-[10px] text-slate-400">"Tell me about yourself & your strengths"</p>
-                                  </div>
-                                  <button
-                                    onClick={handleStartSearch}
-                                    className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 text-[11px] font-semibold hover:bg-emerald-500 hover:text-slate-950 transition-all"
-                                  >
-                                    Practice
-                                  </button>
-                                </div>
-
-                                <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-                                  <div>
-                                    <h5 className="text-xs font-bold text-white">✈️ Travel & Daily Routine</h5>
-                                    <p className="text-[10px] text-slate-400">"Favorite trip & airport conversations"</p>
-                                  </div>
-                                  <button
-                                    onClick={handleStartSearch}
-                                    className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 text-[11px] font-semibold hover:bg-emerald-500 hover:text-slate-950 transition-all"
-                                  >
-                                    Practice
-                                  </button>
-                                </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <button onClick={handleStartSearch} className="rounded-[18px] bg-[#eaf3ff] px-3 py-3 text-left">
+                                  <Briefcase className="w-5 h-5 text-[#3d6ef5]" />
+                                  <p className="text-[12px] font-extrabold text-[#1b2559] mt-2 leading-tight">Work & Career</p>
+                                  <p className="text-[10px] text-[#8b95b7] mt-0.5">12 lessons</p>
+                                </button>
+                                <button onClick={handleStartSearch} className="rounded-[18px] bg-[#e6f8ef] px-3 py-3 text-left">
+                                  <Plane className="w-5 h-5 text-[#22c55e]" />
+                                  <p className="text-[12px] font-extrabold text-[#1b2559] mt-2 leading-tight">Travel & Tourism</p>
+                                  <p className="text-[10px] text-[#8b95b7] mt-0.5">10 lessons</p>
+                                </button>
+                                <button onClick={handleStartSearch} className="rounded-[18px] bg-[#fff0f4] px-3 py-3 text-left">
+                                  <Coffee className="w-5 h-5 text-[#f43f5e]" />
+                                  <p className="text-[12px] font-extrabold text-[#1b2559] mt-2 leading-tight">Daily Life</p>
+                                  <p className="text-[10px] text-[#8b95b7] mt-0.5">15 lessons</p>
+                                </button>
+                                <button onClick={handleStartSearch} className="rounded-[18px] bg-[#fff8e8] px-3 py-3 text-left">
+                                  <GraduationCap className="w-5 h-5 text-[#f5a623]" />
+                                  <p className="text-[12px] font-extrabold text-[#1b2559] mt-2 leading-tight">Education</p>
+                                  <p className="text-[10px] text-[#8b95b7] mt-0.5">10 lessons</p>
+                                </button>
                               </div>
                             </div>
 
-                            {/* Daily English Tip */}
-                            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                              <div className="flex items-center gap-1.5 text-xs font-bold text-purple-400 mb-1">
-                                <Sparkles className="w-3.5 h-3.5" />
-                                <span>Daily Fluency Tip</span>
+                            <div className="rounded-[18px] bg-[#f3f0ff] px-3.5 py-3 flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#7b61ff] shrink-0">
+                                <Target className="w-5 h-5" />
                               </div>
-                              <p className="text-[11px] text-slate-300 leading-relaxed">
-                                Don't worry about making grammatical mistakes! Fluency comes from speaking continuously for at least 15 minutes every day.
-                              </p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <p className="text-[13px] font-extrabold text-[#1b2559] leading-tight">Your Daily Goal</p>
+                                    <p className="text-[10px] text-[#8b95b7] mt-0.5">Practice for 10 minutes daily</p>
+                                  </div>
+                                  <button
+                                    onClick={handleStartSearch}
+                                    className="shrink-0 px-2.5 py-1 rounded-full bg-white text-[#7b61ff] text-[10px] font-bold"
+                                  >
+                                    Keep Going
+                                  </button>
+                                </div>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <div className="flex-1 h-[6px] rounded-full bg-white overflow-hidden">
+                                    <div className="h-full w-[30%] rounded-full bg-[#3d6ef5]" />
+                                  </div>
+                                  <span className="text-[9px] font-semibold text-[#8b95b7]">3/10 min</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -1510,13 +1524,13 @@ export default function App() {
                       </div>
 
                       {/* Bottom Navigation Bar */}
-                      {currentAppTab === 'SUBSCRIPTION' ? null : (currentAppTab === 'PROFILE' || currentAppTab === 'FRIENDS') ? (
+                      {currentAppTab === 'SUBSCRIPTION' ? null : (currentAppTab === 'PROFILE' || currentAppTab === 'FRIENDS' || currentAppTab === 'HOME') ? (
                         <div className="h-[62px] bg-white border-t border-[#eef2f8] px-2 flex items-center justify-around shrink-0 z-10">
                           <button
                             onClick={() => setCurrentAppTab('HOME')}
-                            className="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-[#9aa3bb]"
+                            className={`flex flex-col items-center gap-0.5 text-[10px] ${currentAppTab === 'HOME' ? 'font-bold text-[#3d6ef5]' : 'font-semibold text-[#9aa3bb]'}`}
                           >
-                            <Home className="w-[18px] h-[18px]" strokeWidth={2.2} />
+                            <Home className="w-[18px] h-[18px]" strokeWidth={2.4} fill={currentAppTab === 'HOME' ? 'currentColor' : 'none'} />
                             <span>Home</span>
                           </button>
                           <button
