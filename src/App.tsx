@@ -134,15 +134,11 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [editFullName, setEditFullName] = useState('Alex Kumar');
-  const [editEmail, setEditEmail] = useState('alexkumar@example.com');
-  const [editDob, setEditDob] = useState('2000-03-12');
-  const [editCountry, setEditCountry] = useState('United States');
-  const [editBio, setEditBio] = useState('I love practicing English, meeting new people and learning new cultures!');
-  const [nativeLanguage, setNativeLanguage] = useState('English');
-  const [learningGoal, setLearningGoal] = useState('Fluent Conversation');
-  const [dailyReminder, setDailyReminder] = useState('7:00 PM');
-  const [editPicker, setEditPicker] = useState<'country' | 'language' | 'goal' | 'reminder' | null>(null);
+  const [editFullName, setEditFullName] = useState('Anand');
+  const [editEmail, setEditEmail] = useState('anand@example.com');
+  const [editDob, setEditDob] = useState('1997-11-24');
+  const [editCountry, setEditCountry] = useState('India');
+  const [editPicker, setEditPicker] = useState<'country' | null>(null);
   const dobInputRef = useRef<HTMLInputElement>(null);
 
   // Active Chat State
@@ -501,23 +497,20 @@ export default function App() {
     { flag: '🇨🇦', name: 'Canada' },
     { flag: '🇦🇺', name: 'Australia' }
   ];
-  const languageOptions = ['English', 'Hindi', 'Spanish', 'French', 'Japanese'];
-  const goalOptions = ['Fluent Conversation', 'Job Interview', 'Travel English', 'Exam Preparation'];
-  const reminderOptions = ['7:00 AM', '8:00 AM', '12:00 PM', '6:00 PM', '7:00 PM', '9:00 PM'];
   const formatDob = (iso: string) => {
     const d = new Date(`${iso}T00:00:00`);
     if (Number.isNaN(d.getTime())) return iso;
     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
-  const selectedCountry = countryOptions.find(c => c.name === editCountry) || countryOptions[0];
+  const selectedCountry = countryOptions.find(c => c.name === editCountry) || countryOptions[1];
   const openEditProfile = () => {
-    setEditFullName(isLoggedIn && userName ? userName : editFullName || 'Alex Kumar');
-    setEditEmail(userEmail || editEmail || 'alexkumar@example.com');
+    setEditFullName(userName && userName !== 'Guest Learner' ? userName : 'Anand');
+    setEditEmail(userEmail || 'anand@example.com');
     setShowEditProfile(true);
     setEditPicker(null);
   };
   const handleSaveProfile = () => {
-    const name = editFullName.trim() || 'Alex Kumar';
+    const name = editFullName.trim() || 'Anand';
     setUserName(name);
     if (editEmail) setUserEmail(editEmail);
     setShowEditProfile(false);
@@ -1882,73 +1875,75 @@ export default function App() {
                   {showEditProfile && (
                     <div className="absolute inset-0 z-50 flex flex-col overflow-hidden bg-gradient-to-b from-[#eaf3ff] via-[#f4f8ff] to-[#e8f1ff]">
                       <div className="absolute -top-10 -left-16 w-48 h-48 rounded-full bg-[#d6e8ff]/80" />
-                      <div className="absolute top-24 -right-12 w-40 h-40 rounded-full bg-[#cfe4ff]/70" />
+                      <div className="absolute top-28 -right-12 w-40 h-40 rounded-full bg-[#cfe4ff]/70" />
 
-                      <div className="relative z-10 px-4 pt-2 pb-2 flex items-start justify-between">
-                        <div className="flex items-start gap-2">
-                          <button
-                            onClick={() => { setShowEditProfile(false); setEditPicker(null); }}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-[#1b2559] mt-0.5"
-                          >
-                            <ChevronLeft className="w-5 h-5" strokeWidth={2.4} />
-                          </button>
-                          <div>
-                            <h2 className="text-[20px] leading-none font-extrabold text-[#1b2559]">Edit Profile</h2>
-                            <p className="text-[11px] text-[#8b95b7] mt-1 font-medium">Keep your profile up to date</p>
-                          </div>
-                        </div>
+                      <div className="relative z-10 px-4 pt-2 pb-1 flex items-center">
                         <button
-                          onClick={handleSaveProfile}
-                          className="px-4 h-8 rounded-full bg-[#ffe4ee] text-[#f43f7a] text-[12px] font-bold"
+                          onClick={() => { setShowEditProfile(false); setEditPicker(null); }}
+                          className="w-9 h-9 rounded-full bg-white shadow-[0_4px_12px_rgba(80,120,200,0.08)] flex items-center justify-center text-[#1b2559]"
                         >
-                          Save
+                          <ChevronLeft className="w-5 h-5" strokeWidth={2.4} />
                         </button>
+                        <h2 className="flex-1 text-center text-[18px] font-extrabold text-[#1b2559]">Edit Profile</h2>
+                        <div className="flex flex-col items-end leading-none">
+                          <span className="text-[13px] font-black tracking-tight">
+                            <span className="text-[#1b2559]">Speak</span>
+                            <span className="text-[#3d6ef5]">Free</span>
+                          </span>
+                          <span className="w-8 h-[3px] rounded-full bg-[#3d6ef5] mt-0.5 mr-0.5" />
+                        </div>
                       </div>
 
-                      <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-4">
-                        <div className="flex flex-col items-center pt-2 pb-3">
+                      <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-3">
+                        <div className="flex flex-col items-center pt-4 pb-4">
                           <button type="button" onClick={() => fileInputRef.current?.click()} className="relative">
-                            <div className="w-[92px] h-[92px] rounded-full bg-white p-[3px] shadow-[0_8px_20px_rgba(80,120,200,0.12)]">
+                            <div className="w-[108px] h-[108px] rounded-full bg-white p-[3px] shadow-[0_8px_20px_rgba(80,120,200,0.12)]">
                               <div className="w-full h-full rounded-full overflow-hidden bg-[#d6ecff]">
                                 <img src={profileImage || '/avatar-anand.svg'} alt="Profile" className="w-full h-full object-cover" />
                               </div>
                             </div>
-                            <div className="absolute -bottom-0.5 -right-0.5 w-8 h-8 rounded-full bg-[#3d6ef5] border-[3px] border-white flex items-center justify-center text-white shadow-md">
-                              <Camera className="w-3.5 h-3.5" />
+                            <div className="absolute bottom-0.5 right-0.5 w-9 h-9 rounded-full bg-[#3d6ef5] border-[3px] border-white flex items-center justify-center text-white shadow-md">
+                              <Camera className="w-4 h-4" />
                             </div>
                           </button>
-                          <p className="text-[11px] text-[#8b95b7] mt-2 font-medium">Tap to change profile photo</p>
+                          <p className="text-[12px] text-[#8b95b7] mt-2.5 font-medium">Change Photo</p>
                         </div>
 
-                        <div className="rounded-[22px] bg-white shadow-[0_8px_24px_rgba(80,120,200,0.08)] px-3 py-2">
+                        <div className="rounded-[22px] bg-white shadow-[0_8px_24px_rgba(80,120,200,0.08)] px-3 py-1.5">
                           <div className="flex items-center gap-2.5 py-2.5">
-                            <User className="w-4 h-4 text-[#9aa6c4] shrink-0" />
-                            <span className="w-[78px] text-[12px] font-semibold text-[#5b6b8c] shrink-0">Full Name</span>
+                            <div className="w-8 h-8 rounded-xl bg-[#eef3fb] flex items-center justify-center text-[#9aa6c4] shrink-0">
+                              <User className="w-4 h-4" />
+                            </div>
+                            <span className="w-[86px] text-[12px] font-semibold text-[#5b6b8c] shrink-0">Name</span>
                             <input
                               value={editFullName}
                               onChange={e => setEditFullName(e.target.value)}
-                              className="flex-1 h-9 rounded-xl border border-[#e6edf8] px-2.5 text-[12px] font-semibold text-[#1b2559] focus:outline-none focus:border-[#3d6ef5]"
+                              className="flex-1 h-10 rounded-xl border border-[#e6edf8] px-3 text-[13px] font-semibold text-[#1b2559] focus:outline-none focus:border-[#3d6ef5]"
                             />
                           </div>
                           <div className="flex items-center gap-2.5 py-2.5">
-                            <Mail className="w-4 h-4 text-[#9aa6c4] shrink-0" />
-                            <span className="w-[78px] text-[12px] font-semibold text-[#5b6b8c] shrink-0">Email</span>
+                            <div className="w-8 h-8 rounded-xl bg-[#eef3fb] flex items-center justify-center text-[#9aa6c4] shrink-0">
+                              <Mail className="w-4 h-4" />
+                            </div>
+                            <span className="w-[86px] text-[12px] font-semibold text-[#5b6b8c] shrink-0">Email</span>
                             <input
                               value={editEmail}
                               readOnly
-                              className="flex-1 h-9 rounded-xl border border-[#eef2f8] bg-[#f5f7fb] px-2.5 text-[12px] font-medium text-[#b4bdd4]"
+                              className="flex-1 h-10 rounded-xl border border-[#eef2f8] bg-[#f5f7fb] px-3 text-[13px] font-medium text-[#b4bdd4]"
                             />
                           </div>
                           <div className="flex items-center gap-2.5 py-2.5">
-                            <Calendar className="w-4 h-4 text-[#9aa6c4] shrink-0" />
-                            <span className="w-[78px] text-[12px] font-semibold text-[#5b6b8c] shrink-0">Date of Birth</span>
+                            <div className="w-8 h-8 rounded-xl bg-[#eef3fb] flex items-center justify-center text-[#9aa6c4] shrink-0">
+                              <Calendar className="w-4 h-4" />
+                            </div>
+                            <span className="w-[86px] text-[12px] font-semibold text-[#5b6b8c] shrink-0">Date of Birth</span>
                             <button
                               type="button"
                               onClick={() => dobInputRef.current?.showPicker?.() || dobInputRef.current?.click()}
-                              className="flex-1 h-9 rounded-xl border border-[#e6edf8] px-2.5 flex items-center justify-between"
+                              className="flex-1 h-10 rounded-xl border border-[#e6edf8] px-3 flex items-center justify-between"
                             >
-                              <span className="text-[12px] font-semibold text-[#1b2559]">{formatDob(editDob)}</span>
-                              <Calendar className="w-3.5 h-3.5 text-[#9aa6c4]" />
+                              <span className="text-[13px] font-semibold text-[#1b2559]">{formatDob(editDob)}</span>
+                              <Calendar className="w-4 h-4 text-[#9aa6c4]" />
                             </button>
                             <input
                               ref={dobInputRef}
@@ -1959,15 +1954,17 @@ export default function App() {
                             />
                           </div>
                           <div className="flex items-center gap-2.5 py-2.5">
-                            <MapPin className="w-4 h-4 text-[#9aa6c4] shrink-0" />
-                            <span className="w-[78px] text-[12px] font-semibold text-[#5b6b8c] shrink-0">Country</span>
+                            <div className="w-8 h-8 rounded-xl bg-[#eef3fb] flex items-center justify-center text-[#9aa6c4] shrink-0">
+                              <MapPin className="w-4 h-4" />
+                            </div>
+                            <span className="w-[86px] text-[12px] font-semibold text-[#5b6b8c] shrink-0">Country</span>
                             <button
                               type="button"
                               onClick={() => setEditPicker(editPicker === 'country' ? null : 'country')}
-                              className="flex-1 h-9 rounded-xl border border-[#e6edf8] px-2.5 flex items-center justify-between"
+                              className="flex-1 h-10 rounded-xl border border-[#e6edf8] px-3 flex items-center justify-between"
                             >
-                              <span className="text-[12px] font-semibold text-[#1b2559]">{selectedCountry.flag} {selectedCountry.name}</span>
-                              <ChevronDown className="w-3.5 h-3.5 text-[#9aa6c4]" />
+                              <span className="text-[13px] font-semibold text-[#1b2559]">{selectedCountry.flag} {selectedCountry.name}</span>
+                              <ChevronDown className="w-4 h-4 text-[#9aa6c4]" />
                             </button>
                           </div>
                           {editPicker === 'country' && (
@@ -1984,58 +1981,12 @@ export default function App() {
                               ))}
                             </div>
                           )}
-                          <div className="flex items-start gap-2.5 py-2.5">
-                            <MessageSquare className="w-4 h-4 text-[#9aa6c4] shrink-0 mt-2" />
-                            <span className="w-[78px] text-[12px] font-semibold text-[#5b6b8c] shrink-0 mt-2">Bio</span>
-                            <div className="flex-1">
-                              <textarea
-                                value={editBio}
-                                maxLength={150}
-                                onChange={e => setEditBio(e.target.value.slice(0, 150))}
-                                className="w-full min-h-[72px] rounded-xl border border-[#e6edf8] px-2.5 py-2 text-[12px] font-medium text-[#1b2559] focus:outline-none focus:border-[#3d6ef5] resize-none"
-                              />
-                              <p className="text-right text-[10px] text-[#b4bdd4] mt-0.5">{editBio.length}/150</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <h3 className="text-[14px] font-extrabold text-[#1b2559] mt-4 mb-2">App Preferences</h3>
-                        <div className="rounded-[22px] bg-white shadow-[0_8px_24px_rgba(80,120,200,0.08)] overflow-hidden">
-                          <button type="button" onClick={() => setEditPicker(editPicker === 'language' ? null : 'language')} className="w-full px-3.5 py-3 flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#e8f0ff] flex items-center justify-center text-[#3d6ef5]"><Globe className="w-4 h-4" /></div>
-                            <span className="flex-1 text-left text-[13px] font-semibold text-[#1b2559]">Native Language</span>
-                            <span className="text-[12px] text-[#8b95b7]">{nativeLanguage}</span>
-                            <ChevronRight className="w-4 h-4 text-[#c5cde0]" />
-                          </button>
-                          {editPicker === 'language' && languageOptions.map(opt => (
-                            <button key={opt} type="button" onClick={() => { setNativeLanguage(opt); setEditPicker(null); }} className={`w-full px-12 py-2 text-left text-[12px] ${opt === nativeLanguage ? 'text-[#3d6ef5] font-bold' : 'text-[#5b6b8c]'}`}>{opt}</button>
-                          ))}
-                          <div className="h-px bg-[#eef2f8] mx-3.5" />
-                          <button type="button" onClick={() => setEditPicker(editPicker === 'goal' ? null : 'goal')} className="w-full px-3.5 py-3 flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#e8f0ff] flex items-center justify-center text-[#3d6ef5]"><Target className="w-4 h-4" /></div>
-                            <span className="flex-1 text-left text-[13px] font-semibold text-[#1b2559]">Learning Goal</span>
-                            <span className="text-[12px] text-[#8b95b7]">{learningGoal}</span>
-                            <ChevronRight className="w-4 h-4 text-[#c5cde0]" />
-                          </button>
-                          {editPicker === 'goal' && goalOptions.map(opt => (
-                            <button key={opt} type="button" onClick={() => { setLearningGoal(opt); setEditPicker(null); }} className={`w-full px-12 py-2 text-left text-[12px] ${opt === learningGoal ? 'text-[#3d6ef5] font-bold' : 'text-[#5b6b8c]'}`}>{opt}</button>
-                          ))}
-                          <div className="h-px bg-[#eef2f8] mx-3.5" />
-                          <button type="button" onClick={() => setEditPicker(editPicker === 'reminder' ? null : 'reminder')} className="w-full px-3.5 py-3 flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#e8f0ff] flex items-center justify-center text-[#3d6ef5]"><Clock className="w-4 h-4" /></div>
-                            <span className="flex-1 text-left text-[13px] font-semibold text-[#1b2559]">Daily Practice Reminder</span>
-                            <span className="text-[12px] text-[#8b95b7]">{dailyReminder}</span>
-                            <ChevronRight className="w-4 h-4 text-[#c5cde0]" />
-                          </button>
-                          {editPicker === 'reminder' && reminderOptions.map(opt => (
-                            <button key={opt} type="button" onClick={() => { setDailyReminder(opt); setEditPicker(null); }} className={`w-full px-12 py-2 text-left text-[12px] ${opt === dailyReminder ? 'text-[#3d6ef5] font-bold' : 'text-[#5b6b8c]'}`}>{opt}</button>
-                          ))}
                         </div>
 
                         <button
                           type="button"
                           onClick={handleSaveProfile}
-                          className="w-full h-12 mt-4 rounded-full bg-[#3d6ef5] text-white text-[15px] font-bold shadow-[0_8px_18px_rgba(61,110,245,0.28)]"
+                          className="w-full h-[52px] mt-5 rounded-full bg-[#3d6ef5] text-white text-[16px] font-bold shadow-[0_8px_18px_rgba(61,110,245,0.28)]"
                         >
                           Save Changes
                         </button>
