@@ -114,6 +114,8 @@ export default function App() {
   const [topicSetIndex, setTopicSetIndex] = useState(0);
   const [friendsPane, setFriendsPane] = useState<'all' | 'requests' | 'search'>('all');
   const [friendSearchQuery, setFriendSearchQuery] = useState('');
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashProgress, setSplashProgress] = useState(8);
 
   // Modal Dialog States
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -174,6 +176,22 @@ export default function App() {
       setAuthSuccess('');
     }
   }, [showAuthModal]);
+
+  useEffect(() => {
+    if (!showSplash) return;
+    setSplashProgress(8);
+    const started = Date.now();
+    const duration = 2400;
+    const tick = window.setInterval(() => {
+      const pct = Math.min(100, 8 + ((Date.now() - started) / duration) * 92);
+      setSplashProgress(pct);
+      if (pct >= 100) {
+        window.clearInterval(tick);
+        window.setTimeout(() => setShowSplash(false), 220);
+      }
+    }, 40);
+    return () => window.clearInterval(tick);
+  }, [showSplash]);
 
   // Handle Find Partner click
   const handleStartSearch = () => {
@@ -456,7 +474,7 @@ export default function App() {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const isLightPhone = simState !== 'IDLE' || currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION' || currentAppTab === 'FRIENDS' || currentAppTab === 'HOME';
+  const isLightPhone = showSplash || simState !== 'IDLE' || currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION' || currentAppTab === 'FRIENDS' || currentAppTab === 'HOME';
   const topicSets = [
     [
       { icon: Coffee, title: 'Daily Life', desc: 'Talk about your routine' },
@@ -547,15 +565,23 @@ export default function App() {
                 <span className="text-[11px] text-slate-400 font-medium">Phone Screen:</span>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => { setSimState('IDLE'); setCurrentAppTab('HOME'); }}
+                    onClick={() => { setSimState('IDLE'); setCurrentAppTab('HOME'); setShowSplash(true); }}
                     className={`px-2 py-1 rounded text-[11px] font-semibold transition-all ${
-                      simState === 'IDLE' && currentAppTab === 'HOME' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:text-white'
+                      showSplash ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    Splash
+                  </button>
+                  <button
+                    onClick={() => { setShowSplash(false); setSimState('IDLE'); setCurrentAppTab('HOME'); }}
+                    className={`px-2 py-1 rounded text-[11px] font-semibold transition-all ${
+                      !showSplash && simState === 'IDLE' && currentAppTab === 'HOME' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:text-white'
                     }`}
                   >
                     Home
                   </button>
                   <button
-                    onClick={() => { setSimState('IDLE'); setCurrentAppTab('FRIENDS'); }}
+                    onClick={() => { setShowSplash(false); setSimState('IDLE'); setCurrentAppTab('FRIENDS'); }}
                     className={`px-2 py-1 rounded text-[11px] font-semibold transition-all ${
                       simState === 'IDLE' && currentAppTab === 'FRIENDS' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:text-white'
                     }`}
@@ -563,7 +589,7 @@ export default function App() {
                     Friends
                   </button>
                   <button
-                    onClick={() => { setSimState('IDLE'); setCurrentAppTab('SUBSCRIPTION'); }}
+                    onClick={() => { setShowSplash(false); setSimState('IDLE'); setCurrentAppTab('SUBSCRIPTION'); }}
                     className={`px-2 py-1 rounded text-[11px] font-semibold transition-all ${
                       simState === 'IDLE' && currentAppTab === 'SUBSCRIPTION' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:text-white'
                     }`}
@@ -571,7 +597,7 @@ export default function App() {
                     5-Mo Plan
                   </button>
                   <button
-                    onClick={() => { setSimState('IDLE'); setCurrentAppTab('PROFILE'); }}
+                    onClick={() => { setShowSplash(false); setSimState('IDLE'); setCurrentAppTab('PROFILE'); }}
                     className={`px-2 py-1 rounded text-[11px] font-semibold transition-all ${
                       simState === 'IDLE' && currentAppTab === 'PROFILE' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:text-white'
                     }`}
@@ -598,7 +624,71 @@ export default function App() {
 
                 {/* Main Inside Phone Container */}
                 <div className={`flex-1 flex flex-col relative overflow-hidden ${isLightPhone ? 'bg-[#eef3fb]' : 'bg-[#0a0d13]'}`}>
-                  
+                  {showSplash && (
+                    <div className="absolute inset-0 z-50 bg-gradient-to-b from-[#eaf4ff] via-[#f4f8ff] to-[#e8f2ff] flex flex-col items-center overflow-hidden">
+                      <div className="absolute -top-10 -left-16 w-48 h-48 rounded-full bg-[#d6e8ff]/70" />
+                      <div className="absolute top-24 -right-10 w-36 h-36 rounded-full bg-[#cfe4ff]/60" />
+                      <div className="absolute bottom-16 -left-10 w-40 h-28 rounded-full bg-[#dbeafe]/80" />
+                      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#cfe4ff] to-transparent" />
+
+                      <div className="flex-1 w-full flex flex-col items-center px-6 pt-10 pb-5 relative">
+                        <div className="relative mt-4 mb-2">
+                          <div className="w-[168px] h-[168px] rounded-full bg-[#d6e8ff] flex items-center justify-center">
+                            <img src="/avatar-anand.svg" alt="SpeakFree" className="w-[148px] h-[148px] object-contain" />
+                          </div>
+                          <div className="absolute left-[-18px] top-10 w-11 h-11 rounded-2xl bg-white shadow-md flex items-center justify-center text-[#3d6ef5]">
+                            <MessageSquare className="w-5 h-5" />
+                          </div>
+                          <div className="absolute right-[-22px] top-16 w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center text-[#3d6ef5]">
+                            <Mic className="w-6 h-6" />
+                          </div>
+                        </div>
+
+                        <h1 className="text-[32px] leading-none font-black tracking-tight mt-2">
+                          <span className="text-[#1b2559]">Speak</span>
+                          <span className="text-[#3d6ef5]">Free</span>
+                        </h1>
+                        <div className="w-16 h-[6px] rounded-full bg-[#3d6ef5] mt-2 mb-3" />
+                        <p className="text-[13px] text-[#8b95b7] text-center font-medium leading-snug">
+                          Speak. Practice. Make Friends.<br />Be Confident.
+                        </p>
+
+                        <div className="w-[210px] mt-6">
+                          <div className="h-[8px] rounded-full bg-[#d7e4ff] overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-[#3d6ef5] to-[#60a5fa] transition-[width] duration-75"
+                              style={{ width: `${splashProgress}%` }}
+                            />
+                          </div>
+                          <p className="text-[11px] text-[#8b95b7] text-center mt-2 font-medium">Loading...</p>
+                        </div>
+
+                        <div className="mt-auto w-full flex items-start justify-between px-4 pt-6">
+                          <div className="flex flex-col items-center w-[72px]">
+                            <div className="w-11 h-11 rounded-full bg-[#e6f8ef] flex items-center justify-center text-[#22c55e]">
+                              <Mic className="w-5 h-5" />
+                            </div>
+                            <span className="text-[11px] font-bold text-[#5b6b8c] mt-1.5">Practice</span>
+                          </div>
+                          <div className="flex flex-col items-center w-[72px]">
+                            <div className="w-11 h-11 rounded-full bg-[#ece8ff] flex items-center justify-center text-[#7b61ff]">
+                              <Users className="w-5 h-5" />
+                            </div>
+                            <span className="text-[11px] font-bold text-[#5b6b8c] mt-1.5">Make Friends</span>
+                          </div>
+                          <div className="flex flex-col items-center w-[72px]">
+                            <div className="w-11 h-11 rounded-full bg-[#fff4d6] flex items-center justify-center text-[#f5a623]">
+                              <BarChart3 className="w-5 h-5" />
+                            </div>
+                            <span className="text-[11px] font-bold text-[#5b6b8c] mt-1.5">Improve</span>
+                          </div>
+                        </div>
+
+                        <p className="text-[9px] tracking-[0.18em] font-bold text-[#a8b4d0] mt-5">YOUR VOICE, A BRIGHTER YOU</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Active Call / Searching Overlay */}
                   {simState !== 'IDLE' ? (
                     <div className="flex-1 flex flex-col bg-[#eef3fb] z-20 overflow-hidden">
