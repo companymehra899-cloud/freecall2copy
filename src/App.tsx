@@ -44,7 +44,13 @@ import {
   LogOut,
   ChevronRight,
   RefreshCw,
-  Camera
+  Camera,
+  Bell,
+  BarChart3,
+  HelpCircle,
+  Clock,
+  Star,
+  Trophy
 } from 'lucide-react';
 
 interface FriendItem {
@@ -534,19 +540,19 @@ export default function App() {
               <div className="w-full max-w-[360px] h-[720px] bg-[#0b0e14] rounded-[44px] border-[6px] border-slate-800 shadow-2xl shadow-emerald-950/20 overflow-hidden relative flex flex-col select-none ring-1 ring-white/10">
                 
                 {/* Phone Top Notch Bar */}
-                <div className="h-7 w-full flex items-center justify-between px-6 pt-2 z-30 bg-[#0b0e14]">
-                  <span className="text-[11px] font-semibold text-slate-300">9:41</span>
-                  <div className="w-16 h-3.5 bg-black rounded-full mx-auto" />
-                  <div className="flex items-center gap-1.5 text-[10px] text-slate-300">
-                    <span className="text-emerald-400 font-bold">5G</span>
-                    <div className="w-3.5 h-2 border border-slate-400 rounded-xs flex items-center p-0.5">
-                      <div className="w-full h-full bg-emerald-400" />
+                <div className={`h-7 w-full flex items-center justify-between px-6 pt-2 z-30 ${simState === 'IDLE' && currentAppTab === 'PROFILE' ? 'bg-[#eef3fb]' : 'bg-[#0b0e14]'}`}>
+                  <span className={`text-[11px] font-semibold ${simState === 'IDLE' && currentAppTab === 'PROFILE' ? 'text-slate-800' : 'text-slate-300'}`}>9:41</span>
+                  <div className={`w-16 h-3.5 rounded-full mx-auto ${simState === 'IDLE' && currentAppTab === 'PROFILE' ? 'bg-slate-900/80' : 'bg-black'}`} />
+                  <div className={`flex items-center gap-1.5 text-[10px] ${simState === 'IDLE' && currentAppTab === 'PROFILE' ? 'text-slate-800' : 'text-slate-300'}`}>
+                    <span className={`font-bold ${simState === 'IDLE' && currentAppTab === 'PROFILE' ? 'text-slate-800' : 'text-emerald-400'}`}>5G</span>
+                    <div className={`w-3.5 h-2 border rounded-xs flex items-center p-0.5 ${simState === 'IDLE' && currentAppTab === 'PROFILE' ? 'border-slate-700' : 'border-slate-400'}`}>
+                      <div className={`w-full h-full ${simState === 'IDLE' && currentAppTab === 'PROFILE' ? 'bg-slate-800' : 'bg-emerald-400'}`} />
                     </div>
                   </div>
                 </div>
 
                 {/* Main Inside Phone Container */}
-                <div className="flex-1 flex flex-col relative overflow-hidden bg-[#0a0d13]">
+                <div className={`flex-1 flex flex-col relative overflow-hidden ${simState === 'IDLE' && currentAppTab === 'PROFILE' ? 'bg-[#eef3fb]' : 'bg-[#0a0d13]'}`}>
                   
                   {/* Active Call / Searching Overlay */}
                   {simState !== 'IDLE' ? (
@@ -728,7 +734,7 @@ export default function App() {
                     <div className="flex-1 flex flex-col overflow-hidden">
                       
                       {/* App Top Bar */}
-                      <div className="px-4 py-3 bg-[#0d1017] border-b border-slate-800/80 flex items-center justify-between z-10 shrink-0">
+                      <div className={`px-4 py-3 border-b flex items-center justify-between z-10 shrink-0 ${currentAppTab === 'PROFILE' ? 'hidden' : 'bg-[#0d1017] border-slate-800/80'}`}>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setCurrentAppTab('PROFILE')}
@@ -758,7 +764,7 @@ export default function App() {
                       </div>
 
                       {/* Screen Content Body */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                      <div className={`flex-1 overflow-y-auto ${currentAppTab === 'PROFILE' ? 'p-0 space-y-0' : 'p-4 space-y-4'}`}>
                         
                         {/* TAB 1: HOME SCREEN */}
                         {currentAppTab === 'HOME' && (
@@ -1047,8 +1053,7 @@ export default function App() {
 
                         {/* TAB 4: PROFILE SCREEN */}
                         {currentAppTab === 'PROFILE' && (
-                          <div className="space-y-4">
-                            {/* Hidden File Input to Pick Image from Device Gallery */}
+                          <div className="px-4 pt-3 pb-3 space-y-3 bg-[#eef3fb] min-h-full">
                             <input
                               type="file"
                               ref={fileInputRef}
@@ -1058,109 +1063,160 @@ export default function App() {
                               id="gallery-photo-input"
                             />
 
-                            {/* Profile Card */}
-                            <div className="p-4 rounded-2xl bg-gradient-to-b from-[#111622] to-[#0c0f16] border border-slate-800">
-                              <div className="flex items-center gap-3">
-                                {/* Clickable Avatar with Camera Badge */}
-                                <div
-                                  onClick={() => fileInputRef.current?.click()}
-                                  className="relative group cursor-pointer shrink-0"
-                                  title="Click to add/change profile image from gallery"
-                                >
-                                  <div className="w-13 h-13 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md shadow-emerald-950/40 transition-transform group-hover:scale-105 active:scale-95">
-                                    <div className="w-full h-full rounded-full bg-slate-900 overflow-hidden flex items-center justify-center font-bold text-base text-white">
-                                      {profileImage ? (
-                                        <img
-                                          src={profileImage}
-                                          alt={userName}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      ) : (
-                                        <div className="w-full h-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold text-base">
-                                          {userName.charAt(0)}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  {/* Camera overlay badge */}
-                                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-slate-900 border border-emerald-400 flex items-center justify-center text-emerald-400 shadow-sm group-hover:bg-emerald-500 group-hover:text-slate-950 transition-colors">
-                                    <Camera className="w-2.5 h-2.5" />
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <div className="flex items-center gap-1.5">
-                                    <h4 className="text-sm font-bold text-white">{userName}</h4>
-                                    {isProUser && (
-                                      <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold border border-amber-500/30">
-                                        PRO
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-xs text-slate-400 font-mono">
-                                    {isLoggedIn ? userEmail : 'Guest Learner (Anonymous)'}
-                                  </p>
-                                </div>
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h2 className="text-[26px] leading-none font-extrabold text-[#1b2559] tracking-tight">Profile</h2>
+                                <p className="text-[12px] text-[#8b95b7] mt-1.5 font-medium">Keep learning, keep growing!</p>
                               </div>
-                            </div>
-
-                            {/* Speaking Stats Grid */}
-                            <div className="grid grid-cols-3 gap-2 text-center">
-                              <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                                <span className="text-[10px] text-slate-400 block">Total Minutes</span>
-                                <span className="text-sm font-bold text-emerald-400 font-mono">0 min</span>
-                              </div>
-                              <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                                <span className="text-[10px] text-slate-400 block">Calls Taken</span>
-                                <span className="text-sm font-bold text-white font-mono">0</span>
-                              </div>
-                              <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                                <span className="text-[10px] text-slate-400 block">Streak</span>
-                                <span className="text-sm font-bold text-amber-400 font-mono">🔥 {userStreak}d</span>
-                              </div>
-                            </div>
-
-                            {/* Settings & Options */}
-                            <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
                               <button
                                 onClick={() => setShowAuthModal(true)}
-                                className="w-full px-3 py-2.5 rounded-lg flex items-center justify-between text-xs text-slate-300 hover:bg-slate-800 transition-colors"
+                                className="w-10 h-10 rounded-full bg-white shadow-[0_4px_14px_rgba(59,99,237,0.08)] flex items-center justify-center text-[#3d4a7a]"
                               >
-                                <div className="flex items-center gap-2">
-                                  <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                                  <span>Login / Sign Up with Email</span>
-                                </div>
-                                <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                                <Settings className="w-[18px] h-[18px]" strokeWidth={2.2} />
                               </button>
+                            </div>
 
-                              <button
-                                onClick={() => setCurrentAppTab('SUBSCRIPTION')}
-                                className="w-full px-3 py-2.5 rounded-lg flex items-center justify-between text-xs text-slate-300 hover:bg-slate-800 transition-colors"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Crown className="w-3.5 h-3.5 text-amber-400" />
-                                  <span>Manage 5-Month Subscription</span>
+                            <div className="rounded-[22px] bg-gradient-to-br from-[#eaf3ff] via-[#f4f8ff] to-[#eef4ff] border border-white/80 shadow-[0_8px_24px_rgba(80,120,200,0.08)] p-3.5">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className="relative shrink-0 cursor-pointer"
+                                >
+                                  <div className="w-[72px] h-[72px] rounded-full bg-white p-[3px] shadow-sm">
+                                    <div className="w-full h-full rounded-full overflow-hidden bg-[#d6ecff]">
+                                      <img
+                                        src={profileImage || '/avatar-anand.svg'}
+                                        alt={userName}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-white border border-[#e6edf8] flex items-center justify-center text-[#5b6b8c] shadow-sm">
+                                    <Camera className="w-3 h-3" />
+                                  </div>
                                 </div>
-                                <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
-                              </button>
 
-                              <div className="w-full px-3 py-2.5 rounded-lg flex items-center justify-between text-xs text-slate-300">
-                                <div className="flex items-center gap-2">
-                                  <Headphones className="w-3.5 h-3.5 text-blue-400" />
-                                  <span>Echo Cancellation (AEC)</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <h3 className="text-[18px] font-extrabold text-[#1b2559] leading-tight truncate">
+                                        {isLoggedIn ? userName : 'Anand'}
+                                      </h3>
+                                      <p className="text-[12px] text-[#8b95b7] mt-0.5">{selectedEnglishLevel === 'Intermediate' && !isLoggedIn ? 'Beginner' : selectedEnglishLevel}</p>
+                                    </div>
+                                    <button
+                                      onClick={() => setShowAuthModal(true)}
+                                      className="shrink-0 px-3 py-1.5 rounded-full bg-white text-[#4d7cff] text-[11px] font-bold shadow-[0_2px_8px_rgba(77,124,255,0.12)]"
+                                    >
+                                      Edit Profile
+                                    </button>
+                                  </div>
+                                  <div className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#e8f0ff] text-[#3d6ef5] text-[11px] font-bold">
+                                    <Star className="w-3 h-3 fill-[#f5c518] text-[#f5c518]" />
+                                    Keep Going
+                                  </div>
                                 </div>
-                                <span className="text-[10px] text-emerald-400 font-semibold">Enabled</span>
                               </div>
 
+                              <div className="mt-3.5 rounded-[16px] bg-white/90 border border-white px-2 py-2.5 grid grid-cols-3">
+                                <div className="flex flex-col items-center justify-center">
+                                  <div className="flex items-center gap-1.5">
+                                    <Flame className="w-4 h-4 text-emerald-500 fill-emerald-500" />
+                                    <span className="text-[16px] font-extrabold text-[#1b2559]">{userStreak || 5}</span>
+                                  </div>
+                                  <span className="text-[10px] text-[#8b95b7] mt-0.5">Day Streak</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center border-x border-[#eef2f8]">
+                                  <div className="flex items-center gap-1.5">
+                                    <BarChart3 className="w-4 h-4 text-[#7b61ff]" />
+                                    <span className="text-[16px] font-extrabold text-[#1b2559]">12</span>
+                                  </div>
+                                  <span className="text-[10px] text-[#8b95b7] mt-0.5">Practice Sessions</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center">
+                                  <div className="flex items-center gap-1.5">
+                                    <Clock className="w-4 h-4 text-[#f5a623] fill-[#f5a623]" />
+                                    <span className="text-[16px] font-extrabold text-[#1b2559]">30</span>
+                                  </div>
+                                  <span className="text-[10px] text-[#8b95b7] mt-0.5">Minutes Learned</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="rounded-[22px] bg-gradient-to-r from-[#f3f7ff] to-[#eaf2ff] border border-white shadow-[0_8px_24px_rgba(80,120,200,0.08)] px-4 py-3.5 relative overflow-hidden">
+                              <div className="pr-16">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-[13px] font-extrabold text-[#1b2559]">Your Learning Progress</h4>
+                                  <span className="text-[11px] font-bold text-[#3d6ef5]">Level 1</span>
+                                </div>
+                                <div className="mt-2.5 flex items-center gap-2">
+                                  <div className="flex-1 h-[8px] rounded-full bg-[#dfe6f2] overflow-hidden">
+                                    <div className="h-full w-[30%] rounded-full bg-[#3b82f6]" />
+                                  </div>
+                                  <span className="text-[11px] font-semibold text-[#8b95b7]">30%</span>
+                                </div>
+                                <p className="text-[10px] text-[#8b95b7] mt-2 leading-snug">Practice a little every day to reach Level 2!</p>
+                              </div>
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center">
+                                <Trophy className="w-11 h-11 text-[#f5c518] fill-[#f5c518] drop-shadow-[0_4px_8px_rgba(245,197,24,0.45)]" />
+                              </div>
+                            </div>
+
+                            <div className="rounded-[22px] bg-white shadow-[0_8px_24px_rgba(80,120,200,0.08)] overflow-hidden">
+                              <button
+                                onClick={() => setShowAuthModal(true)}
+                                className="w-full px-3.5 py-3 flex items-center gap-3 text-left"
+                              >
+                                <div className="w-10 h-10 rounded-2xl bg-[#ece8ff] flex items-center justify-center text-[#7b61ff] shrink-0">
+                                  <User className="w-[18px] h-[18px]" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[13px] font-extrabold text-[#1b2559]">My Profile</p>
+                                  <p className="text-[11px] text-[#8b95b7]">View and update your information</p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-[#c5cde0]" />
+                              </button>
+                              <div className="h-px bg-[#eef2f8] mx-3.5" />
+                              <button
+                                onClick={() => setCurrentAppTab('SUBSCRIPTION')}
+                                className="w-full px-3.5 py-3 flex items-center gap-3 text-left"
+                              >
+                                <div className="w-10 h-10 rounded-2xl bg-[#e6f8ef] flex items-center justify-center text-[#22c55e] shrink-0">
+                                  <BarChart3 className="w-[18px] h-[18px]" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[13px] font-extrabold text-[#1b2559]">My Progress</p>
+                                  <p className="text-[11px] text-[#8b95b7]">See your learning statistics</p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-[#c5cde0]" />
+                              </button>
+                              <div className="h-px bg-[#eef2f8] mx-3.5" />
+                              <button
+                                onClick={() => setShowAuthModal(true)}
+                                className="w-full px-3.5 py-3 flex items-center gap-3 text-left"
+                              >
+                                <div className="w-10 h-10 rounded-2xl bg-[#ffe8ee] flex items-center justify-center text-[#f43f5e] shrink-0">
+                                  <Bell className="w-[18px] h-[18px]" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[13px] font-extrabold text-[#1b2559]">Notifications</p>
+                                  <p className="text-[11px] text-[#8b95b7]">Manage your notifications</p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-[#c5cde0]" />
+                              </button>
+                              <div className="h-px bg-[#eef2f8] mx-3.5" />
                               <button
                                 onClick={() => setShowPrivacyScreen(true)}
-                                className="w-full px-3 py-2.5 rounded-lg flex items-center justify-between text-xs text-slate-300 hover:bg-slate-800 transition-colors"
+                                className="w-full px-3.5 py-3 flex items-center gap-3 text-left"
                               >
-                                <div className="flex items-center gap-2">
-                                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                                  <span>Privacy Policy</span>
+                                <div className="w-10 h-10 rounded-2xl bg-[#e8f0ff] flex items-center justify-center text-[#3d6ef5] shrink-0">
+                                  <HelpCircle className="w-[18px] h-[18px]" />
                                 </div>
-                                <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[13px] font-extrabold text-[#1b2559]">Help & Support</p>
+                                  <p className="text-[11px] text-[#8b95b7]">Get help and find answers</p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-[#c5cde0]" />
                               </button>
                             </div>
                           </div>
@@ -1168,6 +1224,38 @@ export default function App() {
                       </div>
 
                       {/* Bottom Navigation Bar */}
+                      {currentAppTab === 'PROFILE' ? (
+                        <div className="h-[62px] bg-white border-t border-[#eef2f8] px-3 flex items-center justify-around shrink-0 z-10">
+                          <button
+                            onClick={() => setCurrentAppTab('HOME')}
+                            className="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-[#9aa3bb]"
+                          >
+                            <Home className="w-[18px] h-[18px]" strokeWidth={2.2} />
+                            <span>Home</span>
+                          </button>
+                          <button
+                            onClick={() => setCurrentAppTab('FRIENDS')}
+                            className="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-[#9aa3bb]"
+                          >
+                            <Mic className="w-[18px] h-[18px]" strokeWidth={2.2} />
+                            <span>Practice</span>
+                          </button>
+                          <button
+                            onClick={() => setCurrentAppTab('SUBSCRIPTION')}
+                            className="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-[#9aa3bb]"
+                          >
+                            <BarChart3 className="w-[18px] h-[18px]" strokeWidth={2.2} />
+                            <span>Progress</span>
+                          </button>
+                          <button
+                            onClick={() => setCurrentAppTab('PROFILE')}
+                            className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-[#3d6ef5]"
+                          >
+                            <User className="w-[18px] h-[18px]" strokeWidth={2.4} fill="currentColor" />
+                            <span>Profile</span>
+                          </button>
+                        </div>
+                      ) : (
                       <div className="h-14 bg-[#0d1017] border-t border-slate-800/90 px-2 flex items-center justify-around shrink-0 z-10">
                         <button
                           onClick={() => setCurrentAppTab('HOME')}
@@ -1209,6 +1297,7 @@ export default function App() {
                           <span>Profile</span>
                         </button>
                       </div>
+                      )}
                     </div>
                   )}
 
