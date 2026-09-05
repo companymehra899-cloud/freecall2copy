@@ -64,7 +64,10 @@ import {
   SlidersHorizontal,
   Briefcase,
   GraduationCap,
-  Target
+  Target,
+  Eye,
+  EyeOff,
+  Smile
 } from 'lucide-react';
 
 interface FriendItem {
@@ -124,6 +127,7 @@ export default function App() {
   const [inputName, setInputName] = useState('');
   const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
 
@@ -474,7 +478,7 @@ export default function App() {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const isLightPhone = showSplash || simState !== 'IDLE' || currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION' || currentAppTab === 'FRIENDS' || currentAppTab === 'HOME';
+  const isLightPhone = showSplash || showAuthModal || simState !== 'IDLE' || currentAppTab === 'PROFILE' || currentAppTab === 'SUBSCRIPTION' || currentAppTab === 'FRIENDS' || currentAppTab === 'HOME';
   const topicSets = [
     [
       { icon: Coffee, title: 'Daily Life', desc: 'Talk about your routine' },
@@ -1832,79 +1836,143 @@ export default function App() {
 
                   {/* Phone OTP Login Modal */}
                   {showAuthModal && (
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-                      <div className="w-full max-w-[300px] bg-[#10141d] border border-slate-700 rounded-2xl p-5 shadow-2xl relative">
+                    <div className="absolute inset-0 z-50 flex flex-col overflow-hidden bg-gradient-to-b from-[#eaf3ff] via-[#f3f7ff] to-[#e8f1ff]">
+                      <div className="absolute -top-16 -left-20 w-56 h-56 rounded-full bg-[#d6e8ff]/80" />
+                      <div className="absolute top-28 -right-16 w-44 h-44 rounded-full bg-[#cfe4ff]/70" />
+                      <div className="absolute top-[38%] left-6 w-24 h-24 rounded-full bg-[#dbeafe]/70" />
+
+                      <div className="relative z-10 flex items-center justify-end px-5 pt-2">
                         <button
                           onClick={() => {
                             setShowAuthModal(false);
                             setAuthStep('login');
                           }}
-                          className="absolute top-3.5 right-3.5 text-slate-400 hover:text-white"
+                          className="text-[13px] font-semibold text-[#8b95b7]"
                         >
-                          <X className="w-4 h-4" />
+                          Skip
                         </button>
+                      </div>
 
-                        <div className="text-center mb-4">
-                          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-2 border border-emerald-500/30">
-                            <Mail className="w-5 h-5" />
+                      <div className="relative z-10 px-6 pt-3">
+                        <h2 className="text-[28px] leading-none font-black text-[#1b2559] tracking-tight">
+                          {authStep === 'login' ? 'Welcome Back!' : 'Create Account'}
+                        </h2>
+                        <p className="text-[13px] text-[#8b95b7] mt-2 font-medium">
+                          {authStep === 'login' ? 'Continue your English journey' : 'Start your English journey'}
+                        </p>
+                      </div>
+
+                      <div className="relative z-10 flex-1 flex items-end justify-center min-h-[168px] px-2">
+                        <div className="relative w-full h-[168px] flex items-end justify-center">
+                          <img
+                            src="/welcome-boy.svg"
+                            alt="Welcome"
+                            className="w-[230px] h-[230px] object-contain object-bottom -mb-2 drop-shadow-[0_10px_18px_rgba(80,120,200,0.18)]"
+                          />
+                          <div className="absolute right-5 top-6 max-w-[118px] rounded-[18px] bg-white shadow-[0_8px_20px_rgba(80,120,200,0.12)] px-3 py-2.5">
+                            <p className="text-[12px] font-bold text-[#1b2559] leading-snug">
+                              {authStep === 'login' ? 'Good to see you again!' : 'Let’s get started!'}
+                            </p>
+                            <div className="mt-1.5 w-6 h-6 rounded-full bg-[#3d6ef5] flex items-center justify-center text-white">
+                              <Smile className="w-3.5 h-3.5" />
+                            </div>
                           </div>
-                          <h3 className="text-sm font-bold text-white">
-                            {authStep === 'login' ? 'Login with Email' : 'Create Account'}
-                          </h3>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            Secure authentication to save progress
-                          </p>
+                        </div>
+                      </div>
+
+                      <div className="relative z-10 bg-white rounded-t-[28px] px-5 pt-4 pb-5 shadow-[0_-8px_30px_rgba(80,120,200,0.10)]">
+                        <div className="grid grid-cols-2 mb-4">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthStep('login');
+                              setAuthError('');
+                              setAuthSuccess('');
+                            }}
+                            className={`pb-2.5 text-[14px] font-bold border-b-2 ${
+                              authStep === 'login' ? 'text-[#3d6ef5] border-[#3d6ef5]' : 'text-[#b4bdd4] border-transparent'
+                            }`}
+                          >
+                            Login
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthStep('signup');
+                              setAuthError('');
+                              setAuthSuccess('');
+                            }}
+                            className={`pb-2.5 text-[14px] font-bold border-b-2 ${
+                              authStep === 'signup' ? 'text-[#3d6ef5] border-[#3d6ef5]' : 'text-[#b4bdd4] border-transparent'
+                            }`}
+                          >
+                            Sign Up
+                          </button>
                         </div>
 
                         {authError && (
-                          <div className="mb-3 p-2 bg-red-500/10 border border-red-500/20 rounded-lg text-[10px] text-red-400">
+                          <div className="mb-3 p-2 bg-red-50 border border-red-100 rounded-lg text-[10px] text-red-500">
                             {authError}
                           </div>
                         )}
 
                         {authSuccess && (
-                          <div className="mb-3 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] text-emerald-400">
+                          <div className="mb-3 p-2 bg-emerald-50 border border-emerald-100 rounded-lg text-[10px] text-emerald-600">
                             {authSuccess}
                           </div>
                         )}
 
                         {authStep === 'login' && (
                           <form onSubmit={handleEmailLogin} className="space-y-3">
-                            <div>
-                              <label className="text-[10px] text-slate-400 block mb-1">Email Address</label>
+                            <div className="relative">
+                              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9aa6c4]" />
                               <input
                                 type="email"
-                                placeholder="yourname@example.com"
+                                placeholder="Email address"
                                 value={inputEmail}
                                 onChange={e => setInputEmail(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                                className="w-full h-11 bg-white border border-[#e6edf8] rounded-[14px] pl-10 pr-3 text-[13px] text-[#1b2559] placeholder-[#b4bdd4] focus:outline-none focus:border-[#3d6ef5]"
                                 required
                               />
                             </div>
 
-                            <div>
-                              <label className="text-[10px] text-slate-400 block mb-1">Password</label>
+                            <div className="relative">
+                              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9aa6c4]" />
                               <input
-                                type="password"
-                                placeholder="••••••••"
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Password"
                                 value={inputPassword}
                                 onChange={e => setInputPassword(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                                className="w-full h-11 bg-white border border-[#e6edf8] rounded-[14px] pl-10 pr-10 text-[13px] text-[#1b2559] placeholder-[#b4bdd4] focus:outline-none focus:border-[#3d6ef5]"
                                 required
                               />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(v => !v)}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9aa6c4]"
+                              >
+                                {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                              </button>
+                            </div>
+
+                            <div className="flex justify-end">
+                              <button type="button" className="text-[12px] font-bold text-[#3d6ef5]">
+                                Forgot Password?
+                              </button>
                             </div>
 
                             <button
                               type="submit"
-                              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-md mt-2"
+                              className="w-full h-12 rounded-full bg-[#3d6ef5] hover:bg-[#355fe0] text-white text-[14px] font-bold flex items-center justify-center gap-2 shadow-[0_8px_18px_rgba(61,110,245,0.28)]"
                             >
-                              Log In
+                              Login
+                              <ArrowRight className="w-4 h-4" />
                             </button>
 
-                            <p className="text-[10px] text-center text-slate-400 mt-2">
-                              New to SpeakFree?{' '}
+                            <p className="text-[12px] text-center text-[#8b95b7] pt-1">
+                              Don't have an account?{' '}
                               <span
-                                className="text-emerald-400 cursor-pointer hover:underline font-semibold"
+                                className="text-[#3d6ef5] cursor-pointer font-bold"
                                 onClick={() => {
                                   setAuthStep('signup');
                                   setAuthError('');
@@ -1919,60 +1987,68 @@ export default function App() {
 
                         {authStep === 'signup' && (
                           <form onSubmit={handleEmailSignUp} className="space-y-3">
-                            <div>
-                              <label className="text-[10px] text-slate-400 block mb-1">Display Name</label>
+                            <div className="relative">
+                              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9aa6c4]" />
                               <input
                                 type="text"
-                                placeholder="e.g. Harish Singh"
+                                placeholder="Display name"
                                 value={inputName}
                                 onChange={e => setInputName(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                                className="w-full h-11 bg-white border border-[#e6edf8] rounded-[14px] pl-10 pr-3 text-[13px] text-[#1b2559] placeholder-[#b4bdd4] focus:outline-none focus:border-[#3d6ef5]"
                                 required
                               />
                             </div>
 
-                            <div>
-                              <label className="text-[10px] text-slate-400 block mb-1">Email Address</label>
+                            <div className="relative">
+                              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9aa6c4]" />
                               <input
                                 type="email"
-                                placeholder="yourname@example.com"
+                                placeholder="Email address"
                                 value={inputEmail}
                                 onChange={e => setInputEmail(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                                className="w-full h-11 bg-white border border-[#e6edf8] rounded-[14px] pl-10 pr-3 text-[13px] text-[#1b2559] placeholder-[#b4bdd4] focus:outline-none focus:border-[#3d6ef5]"
                                 required
                               />
                             </div>
 
-                            <div>
-                              <label className="text-[10px] text-slate-400 block mb-1">Password</label>
+                            <div className="relative">
+                              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9aa6c4]" />
                               <input
-                                type="password"
-                                placeholder="Min. 6 characters"
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Password"
                                 value={inputPassword}
                                 onChange={e => setInputPassword(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500"
+                                className="w-full h-11 bg-white border border-[#e6edf8] rounded-[14px] pl-10 pr-10 text-[13px] text-[#1b2559] placeholder-[#b4bdd4] focus:outline-none focus:border-[#3d6ef5]"
                                 required
                               />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(v => !v)}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9aa6c4]"
+                              >
+                                {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                              </button>
                             </div>
 
                             <button
                               type="submit"
-                              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-md mt-2"
+                              className="w-full h-12 rounded-full bg-[#3d6ef5] hover:bg-[#355fe0] text-white text-[14px] font-bold flex items-center justify-center gap-2 shadow-[0_8px_18px_rgba(61,110,245,0.28)]"
                             >
                               Sign Up
+                              <ArrowRight className="w-4 h-4" />
                             </button>
 
-                            <p className="text-[10px] text-center text-slate-400 mt-2">
+                            <p className="text-[12px] text-center text-[#8b95b7] pt-1">
                               Already have an account?{' '}
                               <span
-                                className="text-emerald-400 cursor-pointer hover:underline font-semibold"
+                                className="text-[#3d6ef5] cursor-pointer font-bold"
                                 onClick={() => {
                                   setAuthStep('login');
                                   setAuthError('');
                                   setAuthSuccess('');
                                 }}
                               >
-                                Log In
+                                Login
                               </span>
                             </p>
                           </form>
