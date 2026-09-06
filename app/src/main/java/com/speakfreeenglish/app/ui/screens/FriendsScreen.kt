@@ -498,6 +498,7 @@ fun FriendCard(
                         tint = if (isSubscribed) Color.Black else GoldLight,
                         modifier = Modifier.size(18.dp)
                     )
+                }
             }
         }
     }
