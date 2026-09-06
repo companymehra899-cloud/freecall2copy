@@ -22,6 +22,9 @@ android {
     ndk {
       abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
     }
+    buildConfigField("String", "TURN_URL", "\"${System.getenv("TURN_URL") ?: ""}\"")
+    buildConfigField("String", "TURN_USERNAME", "\"${System.getenv("TURN_USERNAME") ?: ""}\"")
+    buildConfigField("String", "TURN_CREDENTIAL", "\"${System.getenv("TURN_CREDENTIAL") ?: ""}\"")
   }
 
   signingConfigs {
@@ -99,6 +102,9 @@ secrets {
   propertiesFileName = ".env"
   defaultPropertiesFileName = ".env.example"
   ignoreList.add("FIREBASE_APPCHECK_DEBUG_TOKEN")
+  ignoreList.add("TURN_URL")
+  ignoreList.add("TURN_USERNAME")
+  ignoreList.add("TURN_CREDENTIAL")
 }
 
 googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN }
