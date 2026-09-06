@@ -174,8 +174,34 @@ export default function App() {
   const [newFriendIdInput, setNewFriendIdInput] = useState('');
   const [friendAddSuccess, setFriendAddSuccess] = useState(false);
 
-  const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const callTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const endTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isProUserRef = useRef(isProUser);
+
+  useEffect(() => {
+    isProUserRef.current = isProUser;
+  }, [isProUser]);
+
+  const clearAllCallTimers = () => {
+    if (searchTimerRef.current) {
+      clearInterval(searchTimerRef.current);
+      searchTimerRef.current = null;
+    }
+    if (callTimerRef.current) {
+      clearInterval(callTimerRef.current);
+      callTimerRef.current = null;
+    }
+    if (connectTimeoutRef.current) {
+      clearTimeout(connectTimeoutRef.current);
+      connectTimeoutRef.current = null;
+    }
+    if (endTimeoutRef.current) {
+      clearTimeout(endTimeoutRef.current);
+      endTimeoutRef.current = null;
+    }
+  };
 
   const addLog = (action: string, type: 'write' | 'read' | 'delete' | 'info') => {
     const now = new Date();
@@ -207,8 +233,38 @@ export default function App() {
     return () => window.clearInterval(tick);
   }, [showSplash]);
 
-  // Handle Find Partner click
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) clearInterval(searchTimerRef.current);
+      if (callTimerRef.current) clearInterval(callTimerRef.current);
+      if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
+      if (endTimeoutRef.current) clearTimeout(endTimeoutRef.current);
+    };
+  }, []);
+
+  const startInCallTimer = () => {
+    if (callTimerRef.current) {
+      clearInterval(callTimerRef.current);
+      callTimerRef.current = null;
+    }
+    let callCount = 0;
+    callTimerRef.current = setInterval(() => {
+      callCount++;
+      setCallSecs(callCount);
+      if (!isProUserRef.current && callCount >= 600) {
+        if (callTimerRef.current) {
+          clearInterval(callTimerRef.current);
+          callTimerRef.current = null;
+        }
+        setIsLimitReached(true);
+        setSimState('ENDED');
+        addLog('⏱️ Free 10-min session limit reached. Call automatically disconnected.', 'info');
+      }
+    }, 1000);
+  };
+
   const handleStartSearch = () => {
+    clearAllCallTimers();
     setSimState('SEARCHING');
     setSearchSecs(0);
     setIsLimitReached(false);
@@ -222,9 +278,11 @@ export default function App() {
       count++;
       setSearchSecs(count);
 
-      // Match found after ~2.5 seconds
       if (count === 3) {
-        if (searchTimerRef.current) clearInterval(searchTimerRef.current);
+        if (searchTimerRef.current) {
+          clearInterval(searchTimerRef.current);
+          searchTimerRef.current = null;
+        }
         setSimState('CONNECTING');
         const partners = ['Rahul Verma (Delhi)', 'Simran Kaur (Chandigarh)', 'Amit Deshmukh (Pune)', 'Kavya Nair (Kerala)'];
         const chosen = partners[Math.floor(Math.random() * partners.length)];
@@ -234,33 +292,21 @@ export default function App() {
         addLog(`MATCH FOUND with learner: ${chosen} (#${randId})`, 'info');
         addLog('CREATE /rooms/room_9941 {callerId, calleeId, offer}', 'write');
 
-        setTimeout(() => {
+        connectTimeoutRef.current = setTimeout(() => {
           setSimState('IN_CALL');
           setCallSecs(0);
           addLog('STUN Binding Success -> WebRTC Audio: CONNECTED', 'info');
-          addLog('⚡ PURGE /waiting_room/anon_user (0 Firestore Storage)', 'delete');
-          addLog('⚡ PURGE /rooms/room_9941 (Signaling Docs Cleaned)', 'delete');
-          addLog('🔒 Firestore snapshot listeners detached (0 active reads)', 'info');
-
-          let callCount = 0;
-          callTimerRef.current = setInterval(() => {
-            callCount++;
-            setCallSecs(callCount);
-
-            // Free user limit: 10 minutes (600 seconds)
-            if (!isProUser && callCount >= 600) {
-              if (callTimerRef.current) clearInterval(callTimerRef.current);
-              setIsLimitReached(true);
-              setSimState('ENDED');
-              addLog('⏱️ Free 10-min session limit reached. Call automatically disconnected.', 'info');
-            }
-          }, 1000);
+          addLog('PURGE /waiting_room/anon_user (0 Firestore Storage)', 'delete');
+          addLog('PURGE /rooms/room_9941 (Signaling Docs Cleaned)', 'delete');
+          addLog('Firestore snapshot listeners detached (0 active reads)', 'info');
+          startInCallTimer();
         }, 1200);
       }
     }, 1000);
   };
 
   const handleStartDirectCall = (friend: FriendItem) => {
+    clearAllCallTimers();
     setCurrentPartnerName(friend.name);
     setCurrentPartnerId(friend.id);
     setSimState('CONNECTING');
@@ -269,41 +315,28 @@ export default function App() {
     setIsSpeaker(true);
     addLog(`Direct Call ringing peer: ${friend.name}`, 'write');
 
-    setTimeout(() => {
+    connectTimeoutRef.current = setTimeout(() => {
       setSimState('IN_CALL');
       setCallSecs(0);
       addLog(`P2P Audio Connected with friend ${friend.name}`, 'info');
-
-      let callCount = 0;
-      callTimerRef.current = setInterval(() => {
-        callCount++;
-        setCallSecs(callCount);
-
-        // Free user limit: 10 minutes (600 seconds)
-        if (!isProUser && callCount >= 600) {
-          if (callTimerRef.current) clearInterval(callTimerRef.current);
-          setIsLimitReached(true);
-          setSimState('ENDED');
-          addLog(`⏱️ Free 10-min limit reached with friend ${friend.name}. Call ended.`, 'info');
-        }
-      }, 1000);
+      startInCallTimer();
     }, 1500);
   };
 
   const handleCancelSearch = () => {
-    if (searchTimerRef.current) clearInterval(searchTimerRef.current);
+    clearAllCallTimers();
     addLog('DELETE /waiting_room/anon_user (search cancelled)', 'delete');
     setSimState('IDLE');
     setSearchSecs(0);
   };
 
   const handleEndCall = (isLimit: boolean = false) => {
-    if (callTimerRef.current) clearInterval(callTimerRef.current);
+    clearAllCallTimers();
     addLog('PeerConnection closed. Audio hardware released.', 'info');
     setIsLimitReached(isLimit);
     setSimState('ENDED');
     if (!isLimit) {
-      setTimeout(() => {
+      endTimeoutRef.current = setTimeout(() => {
         setSimState('IDLE');
         setCallSecs(0);
       }, 1800);
@@ -314,11 +347,14 @@ export default function App() {
   const handleFastForward = (secondsToAdd: number) => {
     setCallSecs(prev => {
       const next = prev + secondsToAdd;
-      if (!isProUser && next >= 600) {
-        if (callTimerRef.current) clearInterval(callTimerRef.current);
+      if (!isProUserRef.current && next >= 600) {
+        if (callTimerRef.current) {
+          clearInterval(callTimerRef.current);
+          callTimerRef.current = null;
+        }
         setIsLimitReached(true);
         setSimState('ENDED');
-        addLog('⏱️ Free 10-min limit reached (via fast-forward). Call disconnected.', 'info');
+        addLog('Free 10-min limit reached (via fast-forward). Call disconnected.', 'info');
         return 600;
       }
       return next;
@@ -924,8 +960,16 @@ export default function App() {
                             </button>
                             <button
                               onClick={() => {
-                                const friend = friendsList[0];
-                                if (friend) handleOpenChat(friend);
+                                const friend = friendsList.find(f => f.id === currentPartnerId || f.name === partnerFirstName) || {
+                                  id: currentPartnerId,
+                                  name: currentPartnerName,
+                                  level: selectedEnglishLevel,
+                                  status: 'Online' as const,
+                                  streak: 1,
+                                  avatarColor: 'bg-[#d6ecff]',
+                                  location: partnerLocation
+                                };
+                                handleOpenChat(friend);
                               }}
                               className="flex flex-col items-center gap-1 w-[52px]"
                             >

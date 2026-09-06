@@ -3,6 +3,7 @@ package com.speakfreeenglish.app.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.speakfreeenglish.app.audio.AppAudioManager
 import com.speakfreeenglish.app.billing.PlayBillingManager
 import com.speakfreeenglish.app.data.AccountRepository
@@ -108,14 +109,54 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var isCallerRole: Boolean = false
     private var pendingIncomingRoomId: String? = null
     private var pendingIncomingCallerId: String? = null
+    private var activePartnerId: String? = null
+    private var endingCall = false
 
     private var timerJob: Job? = null
     private var searchingTimerJob: Job? = null
+    private var resetJob: Job? = null
+
+    companion object {
+        private const val SEARCH_TIMEOUT_SECONDS = 45
+    }
 
     init {
         setupSignaling()
         bindSignalingUser()
         attachRealtimeFriends()
+        ensureGuestAuth()
+        signalingClient.setBlockedPartnerIds(repository.getBlockedPartnerIds())
+    }
+
+    private fun ensureGuestAuth() {
+        val auth = FirebaseAuth.getInstance()
+        if (auth.currentUser == null && currentUser.value.isGuest) {
+            auth.signInAnonymously()
+        }
+    }
+
+    private fun cancelResetJob() {
+        resetJob?.cancel()
+        resetJob = null
+    }
+
+    private fun canStartCall(): Boolean {
+        return _callState.value == CallState.IDLE ||
+            _callState.value == CallState.ENDED ||
+            _callState.value == CallState.ERROR
+    }
+
+    private fun tearDownSession() {
+        stopCallDurationTimer()
+        stopSearchingTimer()
+        webRtcClient?.close()
+        webRtcClient = null
+        signalingClient.cancelOrDisconnect()
+        audioManager.stopAudio()
+        activeRoomId = null
+        activePartnerId = null
+        pendingIncomingRoomId = null
+        pendingIncomingCallerId = null
     }
 
     private fun bindSignalingUser() {
@@ -154,6 +195,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             attachRealtimeFriends()
         }
         bindSignalingUser()
+        playBillingManager.queryExistingActivePurchases()
         _showAuthDialog.value = false
     }
 
@@ -163,7 +205,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.clearFriends()
         _incomingRequests.value = emptyList()
         repository.logoutToGuest()
+        try {
+            FirebaseAuth.getInstance().signOut()
+        } catch (_: Exception) {
+        }
         bindSignalingUser()
+        ensureGuestAuth()
     }
 
     private fun attachRealtimeFriends() {
@@ -192,15 +239,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun reportAndBlockPartner(reason: String = "Inappropriate behavior") {
+        val partnerId = activePartnerId.orEmpty()
         val partner = _partnerLabel.value
-        repository.reportPartner(partner, reason)
-        repository.blockPartner(partner)
+        repository.reportPartner(partnerId, partner, reason)
+        signalingClient.setBlockedPartnerIds(repository.getBlockedPartnerIds())
         _statusMessage.value = "Partner reported and blocked"
         endCall()
     }
 
     fun blockPartner() {
-        repository.blockPartner(_partnerLabel.value)
+        val partnerId = activePartnerId.orEmpty()
+        repository.blockPartner(partnerId.ifBlank { _partnerLabel.value })
+        signalingClient.setBlockedPartnerIds(repository.getBlockedPartnerIds())
         _statusMessage.value = "Partner blocked"
         endCall()
     }
@@ -214,6 +264,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun handleGooglePlayPurchaseVerified(purchase: com.android.billingclient.api.Purchase) {
+        if (currentUser.value.isGuest) {
+            _statusMessage.value = "Login required to apply a Google Play purchase"
+            return
+        }
         val productId = purchase.products.firstOrNull() ?: PlayBillingManager.VIP_5MONTHS_PRODUCT_ID
         val result = repository.applyVerifiedGooglePlayPurchase(
             purchaseToken = purchase.purchaseToken,
@@ -296,10 +350,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _statusMessage.value = "Cannot call this friend"
             return
         }
-        if (_callState.value != CallState.IDLE) return
+        if (!canStartCall()) return
 
+        cancelResetJob()
+        endingCall = false
         closeChat()
         _isFreeLimitReached.value = false
+        activePartnerId = friend.id
         _partnerLabel.value = friend.name.ifBlank { "Friend" }
         _incomingCallerName.value = ""
         _callState.value = CallState.SEARCHING
@@ -315,6 +372,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun acceptIncomingFriendCall() {
         val roomId = pendingIncomingRoomId ?: return
         val callerId = pendingIncomingCallerId ?: return
+        cancelResetJob()
+        endingCall = false
+        activePartnerId = callerId
         _isFreeLimitReached.value = false
         _callState.value = CallState.CONNECTING
         _isMuted.value = false
@@ -339,8 +399,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun setupSignaling() {
         signalingClient.setCallback(object : FirestoreSignalingClient.Callback {
             override fun onMatchFound(roomId: String, isCaller: Boolean, partnerId: String) {
+                if (repository.isPartnerBlocked(partnerId)) {
+                    signalingClient.cancelOrDisconnect()
+                    _statusMessage.value = "Matched partner is blocked"
+                    _callState.value = CallState.ERROR
+                    tearDownSession()
+                    resetAfterDelay()
+                    return
+                }
                 activeRoomId = roomId
                 isCallerRole = isCaller
+                activePartnerId = partnerId
                 if (_partnerLabel.value == "Anonymous Partner") {
                     val friendName = friends.value.firstOrNull { it.id == partnerId }?.name
                     _partnerLabel.value = friendName ?: "Learner #${partnerId.take(4).uppercase()}"
@@ -360,8 +429,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             override fun onIncomingFriendCall(roomId: String, callerId: String, callerName: String) {
-                if (_callState.value != CallState.IDLE) return
+                if (_callState.value != CallState.IDLE) {
+                    signalingClient.declineIncomingFriendCall()
+                    return
+                }
                 closeChat()
+                activePartnerId = callerId
                 pendingIncomingRoomId = roomId
                 pendingIncomingCallerId = callerId
                 val knownName = friends.value.firstOrNull { it.id == callerId }?.name
@@ -414,12 +487,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             override fun onError(message: String) {
                 _statusMessage.value = message
                 _callState.value = CallState.ERROR
+                tearDownSession()
                 resetAfterDelay()
             }
         })
     }
 
     private fun initWebRtc() {
+        webRtcClient?.close()
         webRtcClient = WebRtcAudioClient(getApplication(), object : WebRtcAudioClient.Listener {
             override fun onLocalDescriptionCreated(desc: SessionDescription) {
                 val roomId = activeRoomId ?: return
@@ -447,6 +522,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             override fun onPeerDisconnected() {
+                if (endingCall) return
                 viewModelScope.launch {
                     endCall()
                 }
@@ -455,6 +531,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             override fun onError(description: String) {
                 _statusMessage.value = description
                 _callState.value = CallState.ERROR
+                tearDownSession()
                 resetAfterDelay()
             }
         })
@@ -466,10 +543,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * User clicks "Find Speaking Partner"
      */
     fun findPartner() {
-        if (_callState.value != CallState.IDLE) return
+        if (!canStartCall()) return
 
+        cancelResetJob()
+        endingCall = false
         _isFreeLimitReached.value = false
         _incomingCallerName.value = ""
+        activePartnerId = null
         _partnerLabel.value = "Anonymous Partner"
         _callState.value = CallState.SEARCHING
         _isMuted.value = false
@@ -478,6 +558,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         audioManager.startAudioForCall()
         startSearchingTimer()
+        signalingClient.setBlockedPartnerIds(repository.getBlockedPartnerIds())
         signalingClient.startMatchmaking()
     }
 
@@ -492,23 +573,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Cancel search before match is made
      */
     fun cancelSearch() {
-        stopSearchingTimer()
-        signalingClient.cancelOrDisconnect()
-        audioManager.stopAudio()
-        webRtcClient?.close()
-        webRtcClient = null
-        pendingIncomingRoomId = null
-        pendingIncomingCallerId = null
+        cancelResetJob()
+        endingCall = true
+        tearDownSession()
         _incomingCallerName.value = ""
         _callState.value = CallState.IDLE
         _statusMessage.value = ""
         _partnerLabel.value = "Anonymous Partner"
+        endingCall = false
     }
 
     /**
      * User clicks "End Call"
      */
     fun endCall(isLimitReached: Boolean = false) {
+        if (endingCall) return
+        endingCall = true
         stopCallDurationTimer()
         stopSearchingTimer()
 
@@ -522,10 +602,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         signalingClient.cancelOrDisconnect()
         audioManager.stopAudio()
+        activeRoomId = null
+        activePartnerId = null
 
         if (isLimitReached) {
             _isFreeLimitReached.value = true
-            _statusMessage.value = "Free 20-Min Call Limit Reached"
+            _statusMessage.value = "Free 10-Min Call Limit Reached"
         } else {
             _statusMessage.value = "Call Ended"
         }
@@ -552,7 +634,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         searchingTimerJob = viewModelScope.launch {
             while (isActive) {
                 delay(1000)
-                _searchingSeconds.value += 1
+                val next = _searchingSeconds.value + 1
+                _searchingSeconds.value = next
+                if (next >= SEARCH_TIMEOUT_SECONDS && _callState.value == CallState.SEARCHING) {
+                    _statusMessage.value = "No partner found. Please try again."
+                    cancelSearch()
+                    break
+                }
             }
         }
     }
@@ -594,21 +682,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun resetAfterDelay() {
-        viewModelScope.launch {
+        cancelResetJob()
+        resetJob = viewModelScope.launch {
             delay(2000)
-            _callState.value = CallState.IDLE
-            _callDurationFormatted.value = "00:00"
-            _callDurationSeconds.value = 0L
-            _partnerLabel.value = "Anonymous Partner"
-            _incomingCallerName.value = ""
-            _statusMessage.value = ""
-            pendingIncomingRoomId = null
-            pendingIncomingCallerId = null
+            if (_callState.value == CallState.ENDED || _callState.value == CallState.ERROR) {
+                _callState.value = CallState.IDLE
+                _callDurationFormatted.value = "00:00"
+                _callDurationSeconds.value = 0L
+                _partnerLabel.value = "Anonymous Partner"
+                _incomingCallerName.value = ""
+                _statusMessage.value = ""
+                pendingIncomingRoomId = null
+                pendingIncomingCallerId = null
+                activePartnerId = null
+                endingCall = false
+            }
         }
     }
 
     override fun onCleared() {
         super.onCleared()
+        cancelResetJob()
         stopCallDurationTimer()
         stopSearchingTimer()
         webRtcClient?.close()

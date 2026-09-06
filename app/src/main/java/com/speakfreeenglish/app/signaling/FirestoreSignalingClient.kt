@@ -66,6 +66,29 @@ class FirestoreSignalingClient(
     private var incomingCallListener: ListenerRegistration? = null
     private var outgoingCallListener: ListenerRegistration? = null
 
+    private var operationId = 0
+    private var lastAppliedOfferSdp: String? = null
+    private var lastAppliedAnswerSdp: String? = null
+    private var lastIncomingInviteKey: String? = null
+    private var blockedPartnerIds: Set<String> = emptySet()
+
+    private fun beginOperation(): Int {
+        lastAppliedOfferSdp = null
+        lastAppliedAnswerSdp = null
+        return ++operationId
+    }
+
+    private fun isCurrent(op: Int): Boolean = op == operationId
+
+    fun setBlockedPartnerIds(ids: Set<String>) {
+        blockedPartnerIds = ids
+    }
+
+    private fun isFreshWaitingDoc(doc: DocumentSnapshot): Boolean {
+        val created = doc.getTimestamp("createdAt")?.toDate()?.time ?: return true
+        return System.currentTimeMillis() - created < 60_000L
+    }
+
     fun setCallback(cb: Callback) {
         this.callback = cb
     }
@@ -108,6 +131,9 @@ class FirestoreSignalingClient(
 
                 when (status) {
                     "ringing" -> {
+                        val inviteKey = "$roomId:$callerId"
+                        if (lastIncomingInviteKey == inviteKey) return@addSnapshotListener
+                        lastIncomingInviteKey = inviteKey
                         incomingCallerId = callerId
                         incomingCallerName = callerName
                         callback?.onIncomingFriendCall(roomId, callerId, callerName)
@@ -132,6 +158,7 @@ class FirestoreSignalingClient(
             return
         }
 
+        val op = beginOperation()
         isCaller = true
         partnerId = cleanCalleeId
         outgoingCalleeId = cleanCalleeId
@@ -159,13 +186,23 @@ class FirestoreSignalingClient(
         db.collection(COLLECTION_ROOMS).document(generatedRoomId)
             .set(roomData)
             .addOnSuccessListener {
+                if (!isCurrent(op)) {
+                    db.collection(COLLECTION_ROOMS).document(generatedRoomId).delete()
+                    return@addOnSuccessListener
+                }
                 db.collection(COLLECTION_DIRECT_CALLS).document(cleanCalleeId)
                     .set(inviteData)
                     .addOnSuccessListener {
+                        if (!isCurrent(op)) {
+                            db.collection(COLLECTION_DIRECT_CALLS).document(cleanCalleeId).delete()
+                            db.collection(COLLECTION_ROOMS).document(generatedRoomId).delete()
+                            return@addOnSuccessListener
+                        }
                         listenToOutgoingDirectCall(cleanCalleeId, generatedRoomId)
                     }
                     .addOnFailureListener { error ->
                         db.collection(COLLECTION_ROOMS).document(generatedRoomId).delete()
+                        if (!isCurrent(op)) return@addOnFailureListener
                         currentRoomId = null
                         partnerId = null
                         outgoingCalleeId = null
@@ -173,6 +210,7 @@ class FirestoreSignalingClient(
                     }
             }
             .addOnFailureListener { error ->
+                if (!isCurrent(op)) return@addOnFailureListener
                 currentRoomId = null
                 partnerId = null
                 outgoingCalleeId = null
@@ -247,25 +285,28 @@ class FirestoreSignalingClient(
      * If found, pairs with them immediately. Otherwise, posts self as waiting.
      */
     fun startMatchmaking() {
-        // Query for another waiting user (excluding self)
+        val op = beginOperation()
         db.collection(COLLECTION_WAITING)
             .whereEqualTo("status", "waiting")
-            .limit(5)
+            .limit(8)
             .get()
             .addOnSuccessListener { querySnapshot ->
+                if (!isCurrent(op)) return@addOnSuccessListener
                 val availablePeerDoc = querySnapshot.documents.firstOrNull { doc ->
-                    doc.id != userId && doc.getString("status") == "waiting"
+                    doc.id != userId &&
+                        doc.getString("status") == "waiting" &&
+                        !blockedPartnerIds.contains(doc.id) &&
+                        isFreshWaitingDoc(doc)
                 }
 
                 if (availablePeerDoc != null) {
-                    // Match found! I will act as Caller (Initiator)
-                    pairWithPeer(availablePeerDoc)
+                    pairWithPeer(availablePeerDoc, op)
                 } else {
-                    // No peer available right now, become Callee (Waiting)
-                    registerSelfAsWaiting()
+                    registerSelfAsWaiting(op)
                 }
             }
             .addOnFailureListener { error ->
+                if (!isCurrent(op)) return@addOnFailureListener
                 Log.e(TAG, "Error querying waiting room", error)
                 callback?.onError("Matchmaking query failed: ${error.localizedMessage}")
             }
@@ -274,7 +315,8 @@ class FirestoreSignalingClient(
     /**
      * Pair with an available peer found in the waiting room.
      */
-    private fun pairWithPeer(peerDoc: DocumentSnapshot) {
+    private fun pairWithPeer(peerDoc: DocumentSnapshot, op: Int) {
+        if (!isCurrent(op)) return
         val peerId = peerDoc.id
         val generatedRoomId = UUID.randomUUID().toString()
         isCaller = true
@@ -300,8 +342,8 @@ class FirestoreSignalingClient(
                 false
             }
         }.addOnSuccessListener { claimed ->
+            if (!isCurrent(op)) return@addOnSuccessListener
             if (claimed) {
-                // Initialize room document
                 val roomData = hashMapOf(
                     "roomId" to generatedRoomId,
                     "callerId" to userId,
@@ -311,23 +353,24 @@ class FirestoreSignalingClient(
                 db.collection(COLLECTION_ROOMS).document(generatedRoomId)
                     .set(roomData)
                     .addOnSuccessListener {
+                        if (!isCurrent(op)) return@addOnSuccessListener
                         listenToRoomUpdates(generatedRoomId)
                         listenToRemoteCandidates(generatedRoomId, isCaller = true)
                         callback?.onMatchFound(generatedRoomId, isCaller = true, partnerId = peerId)
                     }
             } else {
-                // Peer was claimed by someone else in the same split second, register as waiting
-                registerSelfAsWaiting()
+                registerSelfAsWaiting(op)
             }
         }.addOnFailureListener {
-            registerSelfAsWaiting()
+            if (isCurrent(op)) registerSelfAsWaiting(op)
         }
     }
 
     /**
      * Registers current user as waiting in Firestore.
      */
-    private fun registerSelfAsWaiting() {
+    private fun registerSelfAsWaiting(op: Int) {
+        if (!isCurrent(op)) return
         isCaller = false
         val myWaitingDoc = db.collection(COLLECTION_WAITING).document(userId)
         val data = hashMapOf(
@@ -336,9 +379,15 @@ class FirestoreSignalingClient(
             "createdAt" to FieldValue.serverTimestamp()
         )
 
+        waitingRoomListener?.remove()
+        waitingRoomListener = null
         myWaitingDoc.set(data, SetOptions.merge()).addOnSuccessListener {
-            // Listen to changes on own document to know when another user pairs with us
+            if (!isCurrent(op)) {
+                myWaitingDoc.delete()
+                return@addOnSuccessListener
+            }
             waitingRoomListener = myWaitingDoc.addSnapshotListener { snapshot, error ->
+                if (!isCurrent(op)) return@addSnapshotListener
                 if (error != null || snapshot == null || !snapshot.exists()) return@addSnapshotListener
 
                 val status = snapshot.getString("status")
@@ -346,9 +395,13 @@ class FirestoreSignalingClient(
                 val matchedWith = snapshot.getString("matchedWith")
 
                 if (status == "matched" && roomId != null && matchedWith != null) {
+                    if (blockedPartnerIds.contains(matchedWith)) {
+                        myWaitingDoc.delete()
+                        callback?.onError("Matched partner is blocked. Searching again is required.")
+                        return@addSnapshotListener
+                    }
                     currentRoomId = roomId
                     partnerId = matchedWith
-                    // We were matched! Stop waiting room listener
                     waitingRoomListener?.remove()
                     waitingRoomListener = null
 
@@ -358,6 +411,7 @@ class FirestoreSignalingClient(
                 }
             }
         }.addOnFailureListener { error ->
+            if (!isCurrent(op)) return@addOnFailureListener
             callback?.onError("Failed to enter waiting room: ${error.localizedMessage}")
         }
     }
@@ -366,6 +420,8 @@ class FirestoreSignalingClient(
      * Listen for SDP offer (if callee) or SDP answer (if caller).
      */
     private fun listenToRoomUpdates(roomId: String) {
+        roomListener?.remove()
+        roomListener = null
         val roomDoc = db.collection(COLLECTION_ROOMS).document(roomId)
         roomListener = roomDoc.addSnapshotListener { snapshot, error ->
             if (error != null || snapshot == null || !snapshot.exists()) return@addSnapshotListener
@@ -376,7 +432,8 @@ class FirestoreSignalingClient(
                 if (offerMap != null) {
                     val sdpType = offerMap["type"] as? String
                     val sdpDescription = offerMap["sdp"] as? String
-                    if (sdpType != null && sdpDescription != null) {
+                    if (sdpType != null && sdpDescription != null && sdpDescription != lastAppliedOfferSdp) {
+                        lastAppliedOfferSdp = sdpDescription
                         val sessionDesc = SessionDescription(
                             SessionDescription.Type.fromCanonicalForm(sdpType.lowercase()),
                             sdpDescription
@@ -385,12 +442,12 @@ class FirestoreSignalingClient(
                     }
                 }
             } else {
-                // Caller listens for Answer
                 val answerMap = snapshot.get("answer") as? Map<*, *>
                 if (answerMap != null) {
                     val sdpType = answerMap["type"] as? String
                     val sdpDescription = answerMap["sdp"] as? String
-                    if (sdpType != null && sdpDescription != null) {
+                    if (sdpType != null && sdpDescription != null && sdpDescription != lastAppliedAnswerSdp) {
+                        lastAppliedAnswerSdp = sdpDescription
                         val sessionDesc = SessionDescription(
                             SessionDescription.Type.fromCanonicalForm(sdpType.lowercase()),
                             sdpDescription
@@ -446,7 +503,8 @@ class FirestoreSignalingClient(
      * Listen for remote ICE candidates sent by peer.
      */
     private fun listenToRemoteCandidates(roomId: String, isCaller: Boolean) {
-        // If caller, listen to callee candidates. If callee, listen to caller candidates.
+        candidatesListener?.remove()
+        candidatesListener = null
         val remoteSubcollection = if (isCaller) CANDIDATES_CALLEE else CANDIDATES_CALLER
         candidatesListener = db.collection(COLLECTION_ROOMS).document(roomId)
             .collection(remoteSubcollection)
@@ -508,6 +566,10 @@ class FirestoreSignalingClient(
      * Cleanly cancels matchmaking or call when user clicks Cancel/End.
      */
     fun cancelOrDisconnect() {
+        operationId++
+        lastAppliedOfferSdp = null
+        lastAppliedAnswerSdp = null
+        lastIncomingInviteKey = null
         val outgoingId = outgoingCalleeId
         detachAllListeners()
         db.collection(COLLECTION_WAITING).document(userId).delete()

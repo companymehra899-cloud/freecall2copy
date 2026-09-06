@@ -16,6 +16,7 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,6 +50,8 @@ class PlayBillingManager(
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing: StateFlow<Boolean> = _isProcessing.asStateFlow()
 
+    private var reconnectAttempt = 0
+
     private val billingClient: BillingClient = BillingClient.newBuilder(context)
         .setListener(this)
         .enablePendingPurchases(
@@ -71,6 +74,7 @@ class PlayBillingManager(
     override fun onBillingSetupFinished(billingResult: BillingResult) {
         if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
             Log.d(TAG, "Google Play Billing v7 setup finished successfully.")
+            reconnectAttempt = 0
             _isReady.value = true
             queryAvailableProducts()
             queryExistingActivePurchases()
@@ -84,36 +88,48 @@ class PlayBillingManager(
     override fun onBillingServiceDisconnected() {
         Log.w(TAG, "Google Play Billing service disconnected. Retrying...")
         _isReady.value = false
-        // Reconnect with backoff or on next foreground event
-        startBillingConnection()
+        reconnectAttempt++
+        val delayMs = (1000L * (1 shl reconnectAttempt.coerceAtMost(5))).coerceAtMost(30_000L)
+        coroutineScope.launch {
+            delay(delayMs)
+            startBillingConnection()
+        }
     }
 
     /**
      * Queries official product details from Google Play Catalog using v7 API.
+     * Play Billing rejects mixed SUBS + INAPP in a single query.
      */
     private fun queryAvailableProducts() {
+        queryProductDetails(BillingClient.ProductType.SUBS) { subs ->
+            if (subs != null) {
+                _productDetails.value = subs
+            } else {
+                queryProductDetails(BillingClient.ProductType.INAPP) { inapp ->
+                    _productDetails.value = inapp
+                }
+            }
+        }
+    }
+
+    private fun queryProductDetails(productType: String, onResult: (ProductDetails?) -> Unit) {
         val productList = listOf(
             QueryProductDetailsParams.Product.newBuilder()
                 .setProductId(VIP_5MONTHS_PRODUCT_ID)
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build(),
-            QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(VIP_5MONTHS_PRODUCT_ID)
-                .setProductType(BillingClient.ProductType.INAPP)
+                .setProductType(productType)
                 .build()
         )
-
         val params = QueryProductDetailsParams.newBuilder()
             .setProductList(productList)
             .build()
-
         billingClient.queryProductDetailsAsync(params) { billingResult, queryProductDetailsList ->
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && queryProductDetailsList.isNotEmpty()) {
                 val details = queryProductDetailsList.first()
-                Log.d(TAG, "Loaded product details for: ${details.productId} (${details.name})")
-                _productDetails.value = details
+                Log.d(TAG, "Loaded product details for: ${details.productId} (${details.productType})")
+                onResult(details)
             } else {
-                Log.w(TAG, "Product details query returned code ${billingResult.responseCode}: ${billingResult.debugMessage}")
+                Log.w(TAG, "Product details query ($productType) returned ${billingResult.responseCode}: ${billingResult.debugMessage}")
+                onResult(null)
             }
         }
     }
@@ -222,7 +238,10 @@ class PlayBillingManager(
     private fun processValidPurchases(purchases: List<Purchase>) {
         for (purchase in purchases) {
             if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                // Ensure purchase token is present
+                if (!purchase.products.contains(VIP_5MONTHS_PRODUCT_ID)) {
+                    Log.w(TAG, "Ignored purchase for unrelated products: ${purchase.products}")
+                    continue
+                }
                 if (purchase.purchaseToken.isBlank()) {
                     Log.e(TAG, "Ignored purchase with empty purchase token.")
                     continue

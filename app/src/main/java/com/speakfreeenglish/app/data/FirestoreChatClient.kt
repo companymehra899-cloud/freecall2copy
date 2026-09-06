@@ -47,6 +47,7 @@ class FirestoreChatClient {
         val data = hashMapOf<String, Any>(
             "userId" to user.userId,
             "name" to user.displayName,
+            "nameLower" to user.displayName.trim().lowercase(),
             "email" to user.email.trim().lowercase(),
             "avatarColorIndex" to user.avatarColorIndex,
             "updatedAt" to FieldValue.serverTimestamp()
@@ -64,6 +65,7 @@ class FirestoreChatClient {
         val data = hashMapOf<String, Any>(
             "userId" to user.userId,
             "name" to user.displayName,
+            "nameLower" to user.displayName.trim().lowercase(),
             "email" to user.email.trim().lowercase(),
             "avatarColorIndex" to user.avatarColorIndex,
             "updatedAt" to FieldValue.serverTimestamp()
@@ -155,14 +157,23 @@ class FirestoreChatClient {
                 createRequest(myUser, found, onResult)
                 return@addOnSuccessListener
             }
-            usersRef.whereEqualTo("name", clean).limit(1).get()
+            usersRef.whereEqualTo("nameLower", clean.lowercase()).limit(1).get()
                 .addOnSuccessListener { nameSnap ->
                     val nameDoc = nameSnap.documents.firstOrNull()
-                    if (nameDoc == null) {
-                        onResult(Result.failure(Exception("No user found. Ask them to login first.")))
-                    } else {
+                    if (nameDoc != null) {
                         createRequest(myUser, nameDoc, onResult)
+                        return@addOnSuccessListener
                     }
+                    usersRef.whereEqualTo("name", clean).limit(1).get()
+                        .addOnSuccessListener { fallbackSnap ->
+                            val fallbackDoc = fallbackSnap.documents.firstOrNull()
+                            if (fallbackDoc == null) {
+                                onResult(Result.failure(Exception("No user found. Ask them to login first.")))
+                            } else {
+                                createRequest(myUser, fallbackDoc, onResult)
+                            }
+                        }
+                        .addOnFailureListener { e -> onResult(Result.failure(e)) }
                 }
                 .addOnFailureListener { e -> onResult(Result.failure(e)) }
         }.addOnFailureListener { e -> onResult(Result.failure(e)) }

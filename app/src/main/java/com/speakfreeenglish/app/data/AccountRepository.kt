@@ -35,9 +35,10 @@ class AccountRepository(context: Context) {
         val displayName = prefs.getString("display_name", if (isGuest) "Guest #${userId.take(4).uppercase()}" else "User") ?: "Guest"
         val phoneNumber = prefs.getString("phone_number", "") ?: ""
         val email = prefs.getString("email", "") ?: ""
-        val isSubscribed = prefs.getBoolean("is_subscribed", false)
         val expiryDate = prefs.getString("sub_expiry_date", "") ?: ""
         val expiryTimestamp = prefs.getLong("sub_expiry_ts", 0L)
+        val now = System.currentTimeMillis()
+        val isSubscribed = prefs.getBoolean("is_subscribed", false) && expiryTimestamp > now
         val playOrderId = prefs.getString("play_order_id", "") ?: ""
         val playToken = prefs.getString("play_purchase_token", "") ?: ""
         val playProductId = prefs.getString("play_product_id", "") ?: ""
@@ -46,6 +47,14 @@ class AccountRepository(context: Context) {
         val totalCalls = prefs.getInt("total_calls", 0)
         val totalTalkTime = prefs.getLong("total_talk_time", 0L)
         val ageConfirmed = prefs.getBoolean("age_confirmed_18", false)
+
+        if (prefs.getBoolean("is_subscribed", false) && expiryTimestamp > 0L && expiryTimestamp <= now) {
+            prefs.edit()
+                .putBoolean("is_subscribed", false)
+                .putString("sub_expiry_date", "")
+                .putLong("sub_expiry_ts", 0L)
+                .apply()
+        }
 
         return UserAccount(
             userId = userId,
@@ -98,11 +107,12 @@ class AccountRepository(context: Context) {
         saveUser(_currentUser.value.copy(ageConfirmed18 = true))
     }
 
-    fun reportPartner(partnerLabel: String, reason: String) {
+    fun reportPartner(partnerId: String, partnerLabel: String, reason: String) {
         try {
             val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
             val report = hashMapOf(
                 "reporterId" to _currentUser.value.userId,
+                "partnerId" to partnerId,
                 "partnerLabel" to partnerLabel,
                 "reason" to reason,
                 "createdAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
@@ -110,12 +120,25 @@ class AccountRepository(context: Context) {
             db.collection("safety_reports").add(report)
         } catch (_: Exception) {
         }
+        if (partnerId.isNotBlank()) {
+            blockPartner(partnerId)
+        }
     }
 
-    fun blockPartner(partnerLabel: String) {
+    fun blockPartner(partnerId: String) {
+        if (partnerId.isBlank()) return
         val blocked = prefs.getStringSet("blocked_partners", emptySet())?.toMutableSet() ?: mutableSetOf()
-        blocked.add(partnerLabel)
+        blocked.add(partnerId)
         prefs.edit().putStringSet("blocked_partners", blocked).apply()
+    }
+
+    fun getBlockedPartnerIds(): Set<String> {
+        return prefs.getStringSet("blocked_partners", emptySet()) ?: emptySet()
+    }
+
+    fun isPartnerBlocked(partnerId: String): Boolean {
+        if (partnerId.isBlank()) return false
+        return getBlockedPartnerIds().contains(partnerId)
     }
 
     fun updateProfileImage(uriString: String?) {
@@ -139,11 +162,21 @@ class AccountRepository(context: Context) {
 
     fun registerOrLogin(name: String, email: String, uid: String): UserAccount {
         val current = _currentUser.value
+        val now = System.currentTimeMillis()
+        val guestSubStillValid = current.isSubscribed &&
+            current.subscriptionExpiryTimestamp > now &&
+            current.googlePlayPurchaseToken.isNotBlank()
         val updated = current.copy(
             userId = uid,
             displayName = name.trim().ifEmpty { "English Learner" },
             email = email.trim(),
-            isGuest = false
+            isGuest = false,
+            isSubscribed = guestSubStillValid,
+            subscriptionExpiryDate = if (guestSubStillValid) current.subscriptionExpiryDate else "",
+            subscriptionExpiryTimestamp = if (guestSubStillValid) current.subscriptionExpiryTimestamp else 0L,
+            googlePlayOrderId = if (guestSubStillValid) current.googlePlayOrderId else "",
+            googlePlayPurchaseToken = if (guestSubStillValid) current.googlePlayPurchaseToken else "",
+            googlePlayProductId = if (guestSubStillValid) current.googlePlayProductId else ""
         )
         saveUser(updated)
         return updated
@@ -180,15 +213,22 @@ class AccountRepository(context: Context) {
             return Result.failure(IllegalArgumentException("Invalid Google Play receipt: purchase token is missing"))
         }
 
+        val current = _currentUser.value
+        if (current.isGuest) {
+            return Result.failure(IllegalStateException("Login required to apply a Google Play purchase"))
+        }
+
         val baseTime = if (purchaseTimeMillis > 0L) purchaseTimeMillis else System.currentTimeMillis()
         val cal = Calendar.getInstance()
         cal.timeInMillis = baseTime
         cal.add(Calendar.MONTH, 5)
         val expiryTime = cal.timeInMillis
+        if (expiryTime <= System.currentTimeMillis()) {
+            return Result.failure(IllegalStateException("Google Play entitlement has already expired"))
+        }
         val formatter = SimpleDateFormat("dd MMM yyyy", Locale.US)
         val formattedDate = formatter.format(Date(expiryTime))
 
-        val current = _currentUser.value
         val updated = current.copy(
             isSubscribed = true,
             subscriptionExpiryDate = formattedDate,

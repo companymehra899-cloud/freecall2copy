@@ -2,14 +2,13 @@ package com.speakfreeenglish.app.audio
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 
 /**
  * Manages Android Audio routing for WebRTC communication.
- * Configures MODE_IN_COMMUNICATION for hardware echo cancellation,
- * manages audio focus, and speakerphone toggling.
  */
 class AppAudioManager(private val context: Context) {
 
@@ -22,7 +21,6 @@ class AppAudioManager(private val context: Context) {
         previousAudioMode = audioManager.mode
         previousSpeakerphoneOn = audioManager.isSpeakerphoneOn
 
-        // Request audio focus for speech communication
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val playbackAttributes = AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
@@ -31,8 +29,8 @@ class AppAudioManager(private val context: Context) {
 
             val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                 .setAudioAttributes(playbackAttributes)
-                .setAcceptsDelayedFocusGain(true)
-                .setOnAudioFocusChangeListener { /* Handle focus changes if needed */ }
+                .setAcceptsDelayedFocusGain(false)
+                .setOnAudioFocusChangeListener { }
                 .build()
 
             audioFocusRequest = focusRequest
@@ -47,14 +45,35 @@ class AppAudioManager(private val context: Context) {
         }
 
         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
-        audioManager.isSpeakerphoneOn = true // Default to speaker for comfortable hands-free conversation
+        setSpeakerphone(true)
     }
 
     fun setSpeakerphone(enable: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val devices = audioManager.availableCommunicationDevices
+            val targetType = if (enable) {
+                AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+            } else {
+                AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+            }
+            val device = devices.firstOrNull { it.type == targetType }
+            if (device != null) {
+                audioManager.setCommunicationDevice(device)
+                return
+            }
+        }
+        @Suppress("DEPRECATION")
         audioManager.isSpeakerphoneOn = enable
     }
 
     fun isSpeakerphoneOn(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val current = audioManager.communicationDevice
+            if (current != null) {
+                return current.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+            }
+        }
+        @Suppress("DEPRECATION")
         return audioManager.isSpeakerphoneOn
     }
 
@@ -66,7 +85,12 @@ class AppAudioManager(private val context: Context) {
             audioManager.abandonAudioFocus(null)
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            audioManager.clearCommunicationDevice()
+        }
+
         audioManager.mode = previousAudioMode
+        @Suppress("DEPRECATION")
         audioManager.isSpeakerphoneOn = previousSpeakerphoneOn
     }
 }
