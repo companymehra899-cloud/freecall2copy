@@ -44,11 +44,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CallEnd
 import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.VolumeDown
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.outlined.GraphicEq
@@ -138,12 +140,26 @@ fun SpeakFreeApp(viewModel: MainViewModel) {
         )
     }
 
+    var pendingFriendCall by remember { mutableStateOf<com.speakfreeenglish.app.model.Friend?>(null) }
+    var pendingAcceptIncoming by remember { mutableStateOf(false) }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasAudioPermission = isGranted
         if (isGranted) {
-            viewModel.findPartner()
+            val friend = pendingFriendCall
+            val acceptIncoming = pendingAcceptIncoming
+            pendingFriendCall = null
+            pendingAcceptIncoming = false
+            when {
+                friend != null -> viewModel.startDirectCallWithFriend(friend)
+                acceptIncoming -> viewModel.acceptIncomingFriendCall()
+                else -> viewModel.findPartner()
+            }
+        } else {
+            pendingFriendCall = null
+            pendingAcceptIncoming = false
         }
     }
 
@@ -174,17 +190,35 @@ fun SpeakFreeApp(viewModel: MainViewModel) {
         return
     }
 
+    if (callState == CallState.RINGING) {
+        IncomingFriendCallScreen(
+            callerName = partnerLabel,
+            onAccept = {
+                if (hasAudioPermission) {
+                    viewModel.acceptIncomingFriendCall()
+                } else {
+                    pendingAcceptIncoming = true
+                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+            },
+            onDecline = { viewModel.declineIncomingFriendCall() }
+        )
+        return
+    }
+
     // Active 1-on-1 Text Chat takes over screen if opened
-    if (activeChatFriend != null) {
+    if (activeChatFriend != null && callState == CallState.IDLE) {
         DirectChatScreen(
             user = user,
             friend = activeChatFriend!!,
             messages = activeChatMessages,
             onSendMessage = { viewModel.sendChatMessage(it) },
             onDirectCall = {
+                val friend = activeChatFriend ?: return@DirectChatScreen
                 if (hasAudioPermission) {
-                    viewModel.startDirectCallWithFriend(activeChatFriend!!)
+                    viewModel.startDirectCallWithFriend(friend)
                 } else {
+                    pendingFriendCall = friend
                     permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 }
             },
@@ -256,6 +290,7 @@ fun SpeakFreeApp(viewModel: MainViewModel) {
                                         if (hasAudioPermission) {
                                             viewModel.startDirectCallWithFriend(friend)
                                         } else {
+                                            pendingFriendCall = friend
                                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                         }
                                     },
@@ -311,7 +346,23 @@ fun SpeakFreeApp(viewModel: MainViewModel) {
                     callState = state,
                     searchingSeconds = searchingSecs,
                     statusMessage = statusMessage,
+                    partnerLabel = partnerLabel,
                     onCancelClicked = { viewModel.cancelSearch() }
+                )
+            }
+
+            CallState.RINGING -> {
+                IncomingFriendCallScreen(
+                    callerName = partnerLabel,
+                    onAccept = {
+                        if (hasAudioPermission) {
+                            viewModel.acceptIncomingFriendCall()
+                        } else {
+                            pendingAcceptIncoming = true
+                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
+                    onDecline = { viewModel.declineIncomingFriendCall() }
                 )
             }
 
@@ -359,6 +410,7 @@ fun SearchingScreen(
     callState: CallState,
     searchingSeconds: Int,
     statusMessage: String,
+    partnerLabel: String = "",
     onCancelClicked: () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "RadarTransition")
@@ -401,7 +453,13 @@ fun SearchingScreen(
                 .padding(horizontal = 14.dp, vertical = 6.dp)
         ) {
             Text(
-                text = if (callState == CallState.CONNECTING) "Connecting to live call..." else "Looking for available speaker",
+                text = when {
+                    callState == CallState.CONNECTING && partnerLabel.isNotBlank() && partnerLabel != "Anonymous Partner" ->
+                        "Connecting with $partnerLabel..."
+                    callState == CallState.CONNECTING -> "Connecting to live call..."
+                    partnerLabel.isNotBlank() && partnerLabel != "Anonymous Partner" -> "Calling $partnerLabel"
+                    else -> "Looking for available speaker"
+                },
                 color = TextSecondary,
                 fontSize = 12.sp,
                 maxLines = 1,
@@ -446,7 +504,13 @@ fun SearchingScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = if (callState == CallState.CONNECTING) "Connecting..." else "Searching for Partner...",
+                text = when {
+                    callState == CallState.CONNECTING && partnerLabel.isNotBlank() && partnerLabel != "Anonymous Partner" ->
+                        "Connecting with $partnerLabel..."
+                    callState == CallState.CONNECTING -> "Connecting..."
+                    partnerLabel.isNotBlank() && partnerLabel != "Anonymous Partner" -> "Calling $partnerLabel..."
+                    else -> "Searching for Partner..."
+                },
                 color = TextPrimary,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
@@ -473,10 +537,122 @@ fun SearchingScreen(
                     .padding(vertical = 16.dp)
             ) {
                 Text(
-                    text = "Cancel Search",
+                    text = if (partnerLabel.isNotBlank() && partnerLabel != "Anonymous Partner") "Cancel Call" else "Cancel Search",
                     color = TextSecondary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun IncomingFriendCallScreen(
+    callerName: String,
+    onAccept: () -> Unit,
+    onDecline: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "Incoming Friend Call",
+            color = TextSecondary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 24.dp)
+        )
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(112.dp)
+                    .clip(CircleShape)
+                    .background(DarkSurfaceElevated)
+                    .border(2.dp, EmeraldAccent, CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Phone,
+                    contentDescription = "Incoming call",
+                    tint = EmeraldLight,
+                    modifier = Modifier.size(44.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = callerName.ifBlank { "Friend" },
+                color = TextPrimary,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "wants to practice with you",
+                color = TextSecondary,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(CircleShape)
+                        .background(RedEndCall)
+                        .clickable { onDecline() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CallEnd,
+                        contentDescription = "Decline",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Text(
+                    text = "Decline",
+                    color = TextSecondary,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(CircleShape)
+                        .background(EmeraldAccent)
+                        .clickable { onAccept() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Call,
+                        contentDescription = "Accept",
+                        tint = Color.Black,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Text(
+                    text = "Accept",
+                    color = TextSecondary,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }

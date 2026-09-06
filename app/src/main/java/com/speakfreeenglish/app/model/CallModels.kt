@@ -6,6 +6,7 @@ package com.speakfreeenglish.app.model
 enum class CallState {
     IDLE,
     SEARCHING,
+    RINGING,
     CONNECTING,
     IN_CALL,
     ENDED,

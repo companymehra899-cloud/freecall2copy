@@ -101,15 +101,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _statusMessage = MutableStateFlow("")
     val statusMessage: StateFlow<String> = _statusMessage.asStateFlow()
 
+    private val _incomingCallerName = MutableStateFlow("")
+    val incomingCallerName: StateFlow<String> = _incomingCallerName.asStateFlow()
+
     private var activeRoomId: String? = null
     private var isCallerRole: Boolean = false
+    private var pendingIncomingRoomId: String? = null
+    private var pendingIncomingCallerId: String? = null
 
     private var timerJob: Job? = null
     private var searchingTimerJob: Job? = null
 
     init {
         setupSignaling()
+        bindSignalingUser()
         attachRealtimeFriends()
+    }
+
+    private fun bindSignalingUser() {
+        val accountId = currentUser.value.userId
+        if (accountId.isNotBlank()) {
+            signalingClient.bindUser(accountId)
+        } else {
+            signalingClient.startIncomingCallListener()
+        }
     }
 
     fun selectTab(tab: AppTab) {
@@ -138,6 +153,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         chatClient.syncProfileOnLogin(user) {
             attachRealtimeFriends()
         }
+        bindSignalingUser()
         _showAuthDialog.value = false
     }
 
@@ -147,6 +163,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.clearFriends()
         _incomingRequests.value = emptyList()
         repository.logoutToGuest()
+        bindSignalingUser()
     }
 
     private fun attachRealtimeFriends() {
@@ -270,8 +287,53 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startDirectCallWithFriend(friend: Friend) {
-        _partnerLabel.value = friend.name
-        findPartner()
+        val user = currentUser.value
+        if (user.isGuest || user.userId.isBlank()) {
+            _showAuthDialog.value = true
+            return
+        }
+        if (friend.id.isBlank() || friend.id == user.userId) {
+            _statusMessage.value = "Cannot call this friend"
+            return
+        }
+        if (_callState.value != CallState.IDLE) return
+
+        closeChat()
+        _isFreeLimitReached.value = false
+        _partnerLabel.value = friend.name.ifBlank { "Friend" }
+        _incomingCallerName.value = ""
+        _callState.value = CallState.SEARCHING
+        _isMuted.value = false
+        _isSpeakerOn.value = true
+        _statusMessage.value = "Calling ${friend.name}..."
+
+        audioManager.startAudioForCall()
+        startSearchingTimer()
+        signalingClient.startDirectCallWithFriend(friend.id, user.displayName)
+    }
+
+    fun acceptIncomingFriendCall() {
+        val roomId = pendingIncomingRoomId ?: return
+        val callerId = pendingIncomingCallerId ?: return
+        _isFreeLimitReached.value = false
+        _callState.value = CallState.CONNECTING
+        _isMuted.value = false
+        _isSpeakerOn.value = true
+        _statusMessage.value = "Connecting with ${_partnerLabel.value}..."
+        audioManager.startAudioForCall()
+        signalingClient.acceptIncomingFriendCall(roomId, callerId)
+        pendingIncomingRoomId = null
+        pendingIncomingCallerId = null
+    }
+
+    fun declineIncomingFriendCall() {
+        signalingClient.declineIncomingFriendCall()
+        pendingIncomingRoomId = null
+        pendingIncomingCallerId = null
+        _incomingCallerName.value = ""
+        _partnerLabel.value = "Anonymous Partner"
+        _callState.value = CallState.IDLE
+        _statusMessage.value = ""
     }
 
     private fun setupSignaling() {
@@ -280,7 +342,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 activeRoomId = roomId
                 isCallerRole = isCaller
                 if (_partnerLabel.value == "Anonymous Partner") {
-                    _partnerLabel.value = "Learner #${partnerId.take(4).uppercase()}"
+                    val friendName = friends.value.firstOrNull { it.id == partnerId }?.name
+                    _partnerLabel.value = friendName ?: "Learner #${partnerId.take(4).uppercase()}"
                 }
                 _callState.value = CallState.CONNECTING
 
@@ -294,6 +357,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         webRtcClient?.createOffer()
                     }
                 }
+            }
+
+            override fun onIncomingFriendCall(roomId: String, callerId: String, callerName: String) {
+                if (_callState.value != CallState.IDLE) return
+                closeChat()
+                pendingIncomingRoomId = roomId
+                pendingIncomingCallerId = callerId
+                val knownName = friends.value.firstOrNull { it.id == callerId }?.name
+                val displayName = knownName?.ifBlank { null } ?: callerName.ifBlank { "Friend" }
+                _partnerLabel.value = displayName
+                _incomingCallerName.value = displayName
+                _statusMessage.value = "$displayName is calling you"
+                _callState.value = CallState.RINGING
+            }
+
+            override fun onDirectCallDeclined() {
+                stopSearchingTimer()
+                audioManager.stopAudio()
+                webRtcClient?.close()
+                webRtcClient = null
+                signalingClient.cancelOrDisconnect()
+                _statusMessage.value = "${_partnerLabel.value} declined the call"
+                _callState.value = CallState.ENDED
+                resetAfterDelay()
+            }
+
+            override fun onDirectCallCancelled() {
+                if (_callState.value != CallState.RINGING) return
+                pendingIncomingRoomId = null
+                pendingIncomingCallerId = null
+                _incomingCallerName.value = ""
+                _statusMessage.value = "Call cancelled"
+                _callState.value = CallState.ENDED
+                resetAfterDelay()
             }
 
             override fun onOfferReceived(offer: SessionDescription) {
@@ -372,6 +469,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (_callState.value != CallState.IDLE) return
 
         _isFreeLimitReached.value = false
+        _incomingCallerName.value = ""
+        _partnerLabel.value = "Anonymous Partner"
         _callState.value = CallState.SEARCHING
         _isMuted.value = false
         _isSpeakerOn.value = true
@@ -398,6 +497,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         audioManager.stopAudio()
         webRtcClient?.close()
         webRtcClient = null
+        pendingIncomingRoomId = null
+        pendingIncomingCallerId = null
+        _incomingCallerName.value = ""
         _callState.value = CallState.IDLE
         _statusMessage.value = ""
         _partnerLabel.value = "Anonymous Partner"
@@ -498,7 +600,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _callDurationFormatted.value = "00:00"
             _callDurationSeconds.value = 0L
             _partnerLabel.value = "Anonymous Partner"
+            _incomingCallerName.value = ""
             _statusMessage.value = ""
+            pendingIncomingRoomId = null
+            pendingIncomingCallerId = null
         }
     }
 
