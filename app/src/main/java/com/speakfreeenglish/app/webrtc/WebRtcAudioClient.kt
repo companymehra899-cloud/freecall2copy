@@ -1,6 +1,7 @@
 package com.speakfreeenglish.app.webrtc
 
 import android.content.Context
+import com.speakfreeenglish.app.BuildConfig
 import org.webrtc.AudioSource
 import org.webrtc.AudioTrack
 import org.webrtc.IceCandidate
@@ -35,11 +36,41 @@ class WebRtcAudioClient(
         private const val AUDIO_TRACK_ID = "ARDAMSa0"
         private const val MEDIA_STREAM_ID = "ARDAMS"
 
-        private val STUN_SERVERS = listOf(
-            IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
-            IceServer.builder("stun:stun1.l.google.com:19302").createIceServer(),
-            IceServer.builder("stun:stun2.l.google.com:19302").createIceServer()
-        )
+        private fun iceServers(): List<IceServer> {
+            val servers = mutableListOf(
+                IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
+                IceServer.builder("stun:stun1.l.google.com:19302").createIceServer(),
+                IceServer.builder("stun:stun2.l.google.com:19302").createIceServer()
+            )
+            val customUrl = BuildConfig.TURN_URL.trim()
+            val customUser = BuildConfig.TURN_USERNAME.trim()
+            val customCred = BuildConfig.TURN_CREDENTIAL.trim()
+            if (customUrl.isNotEmpty() && customUser.isNotEmpty() && customCred.isNotEmpty()) {
+                servers.add(
+                    IceServer.builder(customUrl)
+                        .setUsername(customUser)
+                        .setPassword(customCred)
+                        .createIceServer()
+                )
+            } else {
+                val user = "openrelayproject"
+                val pass = "openrelayproject"
+                listOf(
+                    "turn:openrelay.metered.ca:80",
+                    "turn:openrelay.metered.ca:80?transport=tcp",
+                    "turn:openrelay.metered.ca:443",
+                    "turns:openrelay.metered.ca:443?transport=tcp"
+                ).forEach { url ->
+                    servers.add(
+                        IceServer.builder(url)
+                            .setUsername(user)
+                            .setPassword(pass)
+                            .createIceServer()
+                    )
+                }
+            }
+            return servers
+        }
 
         @Volatile
         private var factoryInitialized = false
@@ -97,12 +128,13 @@ class WebRtcAudioClient(
     }
 
     fun initPeerConnection() {
-        val rtcConfig = PeerConnection.RTCConfiguration(STUN_SERVERS).apply {
+        val rtcConfig = PeerConnection.RTCConfiguration(iceServers()).apply {
             bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
             rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
             continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
             keyType = PeerConnection.KeyType.ECDSA
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
+            iceCandidatePoolSize = 4
         }
 
         isConnectedTriggered = false

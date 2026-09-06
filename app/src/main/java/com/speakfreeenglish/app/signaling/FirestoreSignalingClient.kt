@@ -65,6 +65,7 @@ class FirestoreSignalingClient(
     private var candidatesListener: ListenerRegistration? = null
     private var incomingCallListener: ListenerRegistration? = null
     private var outgoingCallListener: ListenerRegistration? = null
+    private var waitingPoolListener: ListenerRegistration? = null
 
     private var operationId = 0
     private var lastAppliedOfferSdp: String? = null
@@ -286,29 +287,51 @@ class FirestoreSignalingClient(
      */
     fun startMatchmaking() {
         val op = beginOperation()
+        registerSelfAsWaiting(op)
+        queryAndPair(op)
+        listenForWaitingPeers(op)
+    }
+
+    private fun pickWaitingPeer(docs: List<DocumentSnapshot>): DocumentSnapshot? {
+        return docs.firstOrNull { doc ->
+            doc.id != userId &&
+                userId < doc.id &&
+                doc.getString("status") == "waiting" &&
+                !blockedPartnerIds.contains(doc.id) &&
+                isFreshWaitingDoc(doc)
+        }
+    }
+
+    private fun queryAndPair(op: Int) {
+        if (!isCurrent(op) || currentRoomId != null) return
         db.collection(COLLECTION_WAITING)
             .whereEqualTo("status", "waiting")
-            .limit(8)
+            .limit(12)
             .get()
             .addOnSuccessListener { querySnapshot ->
-                if (!isCurrent(op)) return@addOnSuccessListener
-                val availablePeerDoc = querySnapshot.documents.firstOrNull { doc ->
-                    doc.id != userId &&
-                        doc.getString("status") == "waiting" &&
-                        !blockedPartnerIds.contains(doc.id) &&
-                        isFreshWaitingDoc(doc)
-                }
-
+                if (!isCurrent(op) || currentRoomId != null) return@addOnSuccessListener
+                val availablePeerDoc = pickWaitingPeer(querySnapshot.documents)
                 if (availablePeerDoc != null) {
                     pairWithPeer(availablePeerDoc, op)
-                } else {
-                    registerSelfAsWaiting(op)
                 }
             }
             .addOnFailureListener { error ->
                 if (!isCurrent(op)) return@addOnFailureListener
                 Log.e(TAG, "Error querying waiting room", error)
-                callback?.onError("Matchmaking query failed: ${error.localizedMessage}")
+            }
+    }
+
+    private fun listenForWaitingPeers(op: Int) {
+        waitingPoolListener?.remove()
+        waitingPoolListener = db.collection(COLLECTION_WAITING)
+            .whereEqualTo("status", "waiting")
+            .addSnapshotListener { snapshot, error ->
+                if (!isCurrent(op) || error != null || snapshot == null) return@addSnapshotListener
+                if (currentRoomId != null) return@addSnapshotListener
+                val peer = pickWaitingPeer(snapshot.documents)
+                if (peer != null) {
+                    pairWithPeer(peer, op)
+                }
             }
     }
 
@@ -344,6 +367,8 @@ class FirestoreSignalingClient(
         }.addOnSuccessListener { claimed ->
             if (!isCurrent(op)) return@addOnSuccessListener
             if (claimed) {
+                waitingPoolListener?.remove()
+                waitingPoolListener = null
                 val roomData = hashMapOf(
                     "roomId" to generatedRoomId,
                     "callerId" to userId,
@@ -404,6 +429,8 @@ class FirestoreSignalingClient(
                     partnerId = matchedWith
                     waitingRoomListener?.remove()
                     waitingRoomListener = null
+                    waitingPoolListener?.remove()
+                    waitingPoolListener = null
 
                     listenToRoomUpdates(roomId)
                     listenToRemoteCandidates(roomId, isCaller = false)
@@ -595,6 +622,9 @@ class FirestoreSignalingClient(
     private fun detachAllListeners() {
         waitingRoomListener?.remove()
         waitingRoomListener = null
+
+        waitingPoolListener?.remove()
+        waitingPoolListener = null
 
         roomListener?.remove()
         roomListener = null

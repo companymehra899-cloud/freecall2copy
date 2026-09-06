@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.speakfreeenglish.app.audio.AppAudioManager
 import com.speakfreeenglish.app.billing.PlayBillingManager
+import com.speakfreeenglish.app.call.CallForegroundService
 import com.speakfreeenglish.app.data.AccountRepository
 import com.speakfreeenglish.app.data.FirestoreChatClient
 import com.speakfreeenglish.app.model.AppTab
@@ -129,9 +130,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun ensureGuestAuth() {
+        ensureGuestAuthThen { }
+    }
+
+    private fun ensureGuestAuthThen(onReady: () -> Unit) {
         val auth = FirebaseAuth.getInstance()
-        if (auth.currentUser == null && currentUser.value.isGuest) {
-            auth.signInAnonymously()
+        val existing = auth.currentUser
+        if (existing != null) {
+            signalingClient.bindUser(existing.uid)
+            onReady()
+            return
+        }
+        auth.signInAnonymously()
+            .addOnSuccessListener { result ->
+                val uid = result.user?.uid
+                if (!uid.isNullOrBlank()) {
+                    signalingClient.bindUser(uid)
+                }
+                onReady()
+            }
+            .addOnFailureListener {
+                bindSignalingUser()
+                onReady()
+            }
+    }
+
+    private fun startCallForeground() {
+        try {
+            CallForegroundService.start(getApplication())
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun stopCallForeground() {
+        try {
+            CallForegroundService.stop(getApplication())
+        } catch (_: Exception) {
         }
     }
 
@@ -153,6 +187,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         webRtcClient = null
         signalingClient.cancelOrDisconnect()
         audioManager.stopAudio()
+        stopCallForeground()
         activeRoomId = null
         activePartnerId = null
         pendingIncomingRoomId = null
@@ -364,6 +399,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isSpeakerOn.value = true
         _statusMessage.value = "Calling ${friend.name}..."
 
+        startCallForeground()
         audioManager.startAudioForCall()
         startSearchingTimer()
         signalingClient.startDirectCallWithFriend(friend.id, user.displayName)
@@ -380,6 +416,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isMuted.value = false
         _isSpeakerOn.value = true
         _statusMessage.value = "Connecting with ${_partnerLabel.value}..."
+        startCallForeground()
         audioManager.startAudioForCall()
         signalingClient.acceptIncomingFriendCall(roomId, callerId)
         pendingIncomingRoomId = null
@@ -556,10 +593,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isSpeakerOn.value = true
         _statusMessage.value = "Matching you with an English learner..."
 
+        startCallForeground()
         audioManager.startAudioForCall()
         startSearchingTimer()
         signalingClient.setBlockedPartnerIds(repository.getBlockedPartnerIds())
-        signalingClient.startMatchmaking()
+        ensureGuestAuthThen {
+            signalingClient.startMatchmaking()
+        }
     }
 
     /**
@@ -602,6 +642,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         signalingClient.cancelOrDisconnect()
         audioManager.stopAudio()
+        stopCallForeground()
         activeRoomId = null
         activePartnerId = null
 
@@ -707,6 +748,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         stopSearchingTimer()
         webRtcClient?.close()
         signalingClient.cancelOrDisconnect()
+        stopCallForeground()
         closeChat()
         chatClient.detachAll()
         audioManager.stopAudio()
