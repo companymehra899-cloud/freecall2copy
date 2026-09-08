@@ -209,8 +209,9 @@ fun ProfileScreen(
                         color = TextPrimary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 2,
+                        overflow = TextOverflow.Clip,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier.weight(1f, fill = false)
                     )
                     if (user.isSubscribed) {
@@ -241,9 +242,12 @@ fun ProfileScreen(
                     },
                     color = TextMuted,
                     fontSize = 12.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 2.dp)
+                    maxLines = 2,
+                    overflow = TextOverflow.Clip,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp, horizontal = 8.dp)
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -305,14 +309,14 @@ fun ProfileScreen(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Clip
                     )
                     Text(
                         text = if (user.isSubscribed) "Expires: ${user.subscriptionExpiryDate}" else "Direct friend calling & text chat",
                         color = TextSecondary,
                         fontSize = 11.sp,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Clip
                     )
                 }
                 Text(

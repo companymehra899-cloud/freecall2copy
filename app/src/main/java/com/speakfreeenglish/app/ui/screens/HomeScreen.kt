@@ -137,15 +137,15 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Hero Title
-        Text(
-            text = "Anonymous Voice Practice",
-            color = TextPrimary,
-            fontSize = if (adaptive.isCompactWidth) 20.sp else 24.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (-0.5).sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
+            Text(
+                text = "Anonymous Voice Practice",
+                color = TextPrimary,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.5).sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
 
         Text(
             text = "Free & instant pairing. No login required for random calls.",
@@ -285,15 +285,15 @@ fun HomeScreen(
                           color = TextPrimary,
                           fontSize = 14.sp,
                           fontWeight = FontWeight.SemiBold,
-                          maxLines = 1,
-                          overflow = TextOverflow.Ellipsis
+                          maxLines = 2,
+                          overflow = TextOverflow.Clip
                       )
                       Text(
                           text = "Direct call & text chat",
                           color = TextMuted,
                           fontSize = 11.sp,
                           maxLines = 2,
-                          overflow = TextOverflow.Ellipsis,
+                          overflow = TextOverflow.Clip,
                           modifier = Modifier.padding(top = 2.dp)
                       )
                 }
@@ -349,15 +349,15 @@ fun HomeScreen(
                             color = GoldLight,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            maxLines = 2,
+                            overflow = TextOverflow.Clip
                         )
                         Text(
                             text = "Direct calling & chat",
                             color = TextSecondary,
                             fontSize = 11.sp,
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = TextOverflow.Clip,
                             modifier = Modifier.padding(top = 2.dp)
                         )
                 }
@@ -406,7 +406,9 @@ fun HomeScreen(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.padding(bottom = 12.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
         ) {
             Icon(
                 imageVector = Icons.Outlined.Shield,
@@ -419,7 +421,8 @@ fun HomeScreen(
                 color = TextMuted,
                 fontSize = 11.sp,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.weight(1f)
             )
         }
         Text(
@@ -454,7 +457,8 @@ fun TopicItem(label: String, modifier: Modifier = Modifier) {
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
             maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Clip,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }

@@ -100,15 +100,15 @@ fun FriendsScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Speaking Friends",
-                    color = TextPrimary,
-                    fontSize = if (adaptive.isCompactWidth) 18.sp else 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Speaking Friends",
+                            color = TextPrimary,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Clip
+                        )
                 Text(
                     text = "Send a request. They accept. Then chat.",
                     color = TextMuted,
@@ -262,14 +262,14 @@ fun FriendsScreen(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Clip
                         )
                         Text(
                             text = "₹100 for 5 Months unlimited plan",
                             color = TextSecondary,
                             fontSize = 11.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            maxLines = 2,
+                            overflow = TextOverflow.Clip
                         )
                     }
                     }
@@ -422,31 +422,24 @@ fun FriendCard(
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column {
                         Text(
                             text = friend.name,
                             color = TextPrimary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
+                            maxLines = 2,
+                            overflow = TextOverflow.Clip
                         )
                         if (friend.email.isNotBlank()) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(DarkSurfaceElevated)
-                                    .padding(horizontal = 4.dp, vertical = 1.dp)
-                            ) {
-                                Text(
-                                    text = friend.email,
-                                    color = TextMuted,
-                                    fontSize = 10.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
+                            Text(
+                                text = friend.email,
+                                color = TextMuted,
+                                fontSize = 10.sp,
+                                maxLines = 2,
+                                overflow = TextOverflow.Clip,
+                                modifier = Modifier.padding(top = 1.dp)
+                            )
                         }
                     }
                     Text(
@@ -529,19 +522,22 @@ fun FriendRequestCard(
                     color = TextPrimary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    maxLines = 2,
+                    overflow = TextOverflow.Clip
                 )
                 Text(
                     text = if (request.fromEmail.isNotBlank()) request.fromEmail else "Wants to be friends",
                     color = TextSecondary,
                     fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    maxLines = 2,
+                    overflow = TextOverflow.Clip
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier

@@ -78,6 +78,7 @@ fun AppTopBar(
         // Left Profile Status Pill
         Box(
             modifier = Modifier
+                .weight(1f, fill = false)
                 .clip(RoundedCornerShape(20.dp))
                 .background(DarkSurfaceElevated)
                 .border(1.dp, DarkBorder, RoundedCornerShape(20.dp))

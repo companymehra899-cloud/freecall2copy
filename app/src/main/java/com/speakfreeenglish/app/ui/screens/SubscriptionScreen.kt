@@ -80,7 +80,9 @@ fun SubscriptionScreen(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Diamond,
@@ -91,10 +93,11 @@ fun SubscriptionScreen(
             Text(
                 text = "SpeakFree VIP Pass",
                 color = TextPrimary,
-                fontSize = if (adaptive.isCompactWidth) 18.sp else 22.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                maxLines = 2,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.weight(1f)
             )
         }
 
@@ -274,7 +277,7 @@ fun SubscriptionScreen(
                         Text(
                             text = "₹100",
                             color = GoldLight,
-                            fontSize = if (adaptive.isCompactWidth) 32.sp else 38.sp,
+                            fontSize = 38.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
@@ -431,8 +434,9 @@ fun SubscriptionScreen(
                                 color = Color.Black,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,
+                                overflow = TextOverflow.Clip
                             )
                         }
                     }
@@ -485,7 +489,7 @@ fun BenefitRow(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Clip
             )
             Text(
                 text = description,

@@ -773,22 +773,22 @@ export default function App() {
                       
                       {simState === 'SEARCHING' && (
                         <div className="flex-1 flex flex-col px-4 pt-3 pb-5">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-1 min-w-0 flex-1">
                               <button
                                 onClick={handleCancelSearch}
-                                className="mt-0.5 w-8 h-8 rounded-full flex items-center justify-center text-[#1b2559]"
+                                className="mt-0.5 w-8 h-8 rounded-full flex items-center justify-center text-[#1b2559] shrink-0"
                               >
                                 <ChevronLeft className="w-5 h-5" strokeWidth={2.4} />
                               </button>
-                              <div>
-                                <h2 className="text-[20px] leading-none font-extrabold text-[#1b2559]">Live Practice Call</h2>
-                                <p className="text-[11px] text-[#8b95b7] mt-1.5 font-medium">Talk • Practice • Improve</p>
+                              <div className="min-w-0">
+                                <h2 className="text-[20px] leading-tight font-extrabold text-[#1b2559] break-words">Live Practice Call</h2>
+                                <p className="text-[11px] text-[#8b95b7] mt-1.5 font-medium leading-snug">Talk • Practice • Improve</p>
                               </div>
                             </div>
                             <button
                               onClick={handleCancelSearch}
-                              className="px-3 py-1.5 rounded-full bg-[#ffe8f0] text-[#f43f5e] text-[11px] font-bold flex items-center gap-1"
+                              className="shrink-0 px-3 py-1.5 rounded-full bg-[#ffe8f0] text-[#f43f5e] text-[11px] font-bold flex items-center gap-1"
                             >
                               <Flag className="w-3 h-3" />
                               End Practice
@@ -834,8 +834,8 @@ export default function App() {
                             <div className="w-[88px] h-[88px] rounded-full bg-white p-[3px] shadow-sm mb-3 overflow-hidden">
                               <img src="/avatar-anand.svg" alt="" className="w-full h-full object-cover rounded-full bg-[#d6ecff]" />
                             </div>
-                            <h3 className="text-[16px] font-extrabold text-[#1b2559]">Connecting with {partnerFirstName}...</h3>
-                            <p className="text-[11px] text-[#8b95b7] mt-1">Establishing secure voice connection...</p>
+                            <h3 className="text-[16px] font-extrabold text-[#1b2559] break-words px-2">Connecting with {partnerFirstName}...</h3>
+                            <p className="text-[11px] text-[#8b95b7] mt-1 leading-snug px-3">Establishing secure voice connection...</p>
                           </div>
                         </div>
                       )}
@@ -1084,12 +1084,12 @@ export default function App() {
                         {/* TAB 1: HOME SCREEN */}
                         {currentAppTab === 'HOME' && (
                           <div className="px-3.5 pt-3 pb-3 space-y-3 bg-[#eef3fb] min-h-full">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h2 className="text-[22px] leading-none font-extrabold text-[#1b2559] tracking-tight">Hello, {isLoggedIn ? userName.split(' ')[0] : 'Learner'}!</h2>
-                                <p className="text-[11px] text-[#8b95b7] mt-1.5 font-medium">Let's speak, practice and grow together</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h2 className="text-[22px] leading-tight font-extrabold text-[#1b2559] tracking-tight break-words">Hello, {isLoggedIn ? userName.split(' ')[0] : 'Learner'}!</h2>
+                                <p className="text-[11px] text-[#8b95b7] mt-1.5 font-medium leading-snug">Let's speak, practice and grow together</p>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 shrink-0">
                                 <div className="h-9 px-2.5 rounded-full bg-white shadow-[0_4px_14px_rgba(59,99,237,0.08)] flex items-center gap-1 text-[12px] font-extrabold text-[#1b2559]">
                                   <Flame className="w-3.5 h-3.5 text-[#f97316] fill-[#f97316]" />
                                   {userStreak || 7}
@@ -1108,10 +1108,10 @@ export default function App() {
                             </div>
 
                             <div className="rounded-[22px] bg-gradient-to-r from-[#eaf3ff] to-[#f4f8ff] border border-white shadow-[0_8px_24px_rgba(80,120,200,0.08)] p-3.5 relative overflow-hidden min-h-[168px]">
-                              <div className="pr-[118px]">
+                              <div className="pr-[118px] min-w-0">
                                 <p className="text-[9px] font-bold tracking-[0.14em] text-[#8b95b7] uppercase">Speak Confidently</p>
-                                <h3 className="text-[18px] font-extrabold text-[#1b2559] leading-tight mt-1">Practice Speaking Without Fear</h3>
-                                <p className="text-[11px] text-[#8b95b7] mt-1.5 leading-snug">Improve your English speaking skills with real conversations and fun practice sessions.</p>
+                                <h3 className="text-[18px] font-extrabold text-[#1b2559] leading-tight mt-1 break-words">Practice Speaking Without Fear</h3>
+                                <p className="text-[11px] text-[#8b95b7] mt-1.5 leading-snug break-words">Improve your English speaking skills with real conversations and fun practice sessions.</p>
                                 <button
                                   onClick={handleStartSearch}
                                   className="mt-3 px-4 py-2 rounded-full bg-[#3d6ef5] text-white text-[12px] font-bold inline-flex items-center gap-1.5 shadow-[0_8px_16px_rgba(61,110,245,0.28)]"
@@ -1187,9 +1187,9 @@ export default function App() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between gap-2">
-                                  <div>
+                                  <div className="min-w-0 flex-1">
                                     <p className="text-[13px] font-extrabold text-[#1b2559] leading-tight">Your Daily Goal</p>
-                                    <p className="text-[10px] text-[#8b95b7] mt-0.5">Practice for 10 minutes daily</p>
+                                    <p className="text-[10px] text-[#8b95b7] mt-0.5 leading-snug">Practice for 10 minutes daily</p>
                                   </div>
                                   <button
                                     onClick={handleStartSearch}
@@ -1212,10 +1212,10 @@ export default function App() {
                         {/* TAB 2: FRIENDS SCREEN */}
                         {currentAppTab === 'FRIENDS' && (
                           <div className="px-3.5 pt-3 pb-3 space-y-3 bg-[#eef3fb] min-h-full">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h2 className="text-[26px] leading-none font-extrabold text-[#1b2559] tracking-tight">Friends</h2>
-                                <p className="text-[12px] text-[#8b95b7] mt-1.5 font-medium">Meet, chat and practice together</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h2 className="text-[26px] leading-tight font-extrabold text-[#1b2559] tracking-tight">Friends</h2>
+                                <p className="text-[12px] text-[#8b95b7] mt-1.5 font-medium leading-snug">Meet, chat and practice together</p>
                               </div>
                               <button
                                 onClick={() => setFriendsPane('search')}
@@ -1357,8 +1357,8 @@ export default function App() {
                                           <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${friend.status === 'Offline' ? 'bg-[#c5cde0]' : 'bg-[#22c55e]'}`} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                          <p className="text-[13px] font-extrabold text-[#1b2559] leading-tight">{friend.name}</p>
-                                          <p className="text-[10px] text-[#8b95b7] mt-0.5 truncate">{friend.subtitle || `${friend.level} • ${friend.location}`}</p>
+                                          <p className="text-[13px] font-extrabold text-[#1b2559] leading-tight break-words">{friend.name}</p>
+                                          <p className="text-[10px] text-[#8b95b7] mt-0.5 leading-snug break-words">{friend.subtitle || `${friend.level} • ${friend.location}`}</p>
                                         </div>
                                         <button
                                           onClick={() => handleOpenChat(friend)}
@@ -1425,34 +1425,34 @@ export default function App() {
                                   <p className="text-[8px] text-[#8b95b7]">Speak • Connect • Grow</p>
                                 </div>
                               </div>
-                              <div className="pr-[118px]">
-                                <h3 className="text-[20px] font-extrabold text-[#1b2559] leading-tight">Speak Better<br />Go Further</h3>
-                                <p className="text-[11px] text-[#8b95b7] mt-1.5 leading-snug">Get Premium and enjoy unlimited practice, calls, and advanced features.</p>
+                              <div className="pr-[118px] min-w-0">
+                                <h3 className="text-[20px] font-extrabold text-[#1b2559] leading-tight break-words">Speak Better<br />Go Further</h3>
+                                <p className="text-[11px] text-[#8b95b7] mt-1.5 leading-snug break-words">Get Premium and enjoy unlimited practice, calls, and advanced features.</p>
                               </div>
                               <div className="mt-4 grid grid-cols-4 gap-1">
                                 <div className="flex flex-col items-center text-center">
                                   <div className="w-9 h-9 rounded-full bg-[#e8f0ff] flex items-center justify-center text-[#3d6ef5]">
                                     <Mic className="w-4 h-4" />
                                   </div>
-                                  <span className="text-[9px] font-semibold text-[#5b6b8c] mt-1 leading-tight">Unlimited Speaking</span>
-                                </div>
-                                <div className="flex flex-col items-center text-center">
-                                  <div className="w-9 h-9 rounded-full bg-[#e6f8ef] flex items-center justify-center text-[#22c55e]">
-                                    <Video className="w-4 h-4" />
-                                  </div>
-                                  <span className="text-[9px] font-semibold text-[#5b6b8c] mt-1 leading-tight">Call with Friends</span>
-                                </div>
-                                <div className="flex flex-col items-center text-center">
-                                  <div className="w-9 h-9 rounded-full bg-[#ece8ff] flex items-center justify-center text-[#7b61ff]">
-                                    <BarChart3 className="w-4 h-4" />
-                                  </div>
-                                  <span className="text-[9px] font-semibold text-[#5b6b8c] mt-1 leading-tight">Detailed Feedback</span>
-                                </div>
-                                <div className="flex flex-col items-center text-center">
-                                  <div className="w-9 h-9 rounded-full bg-[#fff4d6] flex items-center justify-center text-[#f5a623]">
-                                    <Crown className="w-4 h-4" />
-                                  </div>
-                                  <span className="text-[9px] font-semibold text-[#5b6b8c] mt-1 leading-tight">Premium Topics</span>
+                                   <span className="text-[9px] font-semibold text-[#5b6b8c] mt-1 leading-tight break-words">Unlimited Speaking</span>
+                                 </div>
+                                 <div className="flex flex-col items-center text-center">
+                                   <div className="w-9 h-9 rounded-full bg-[#e6f8ef] flex items-center justify-center text-[#22c55e]">
+                                     <Video className="w-4 h-4" />
+                                   </div>
+                                   <span className="text-[9px] font-semibold text-[#5b6b8c] mt-1 leading-tight break-words">Call with Friends</span>
+                                 </div>
+                                 <div className="flex flex-col items-center text-center">
+                                   <div className="w-9 h-9 rounded-full bg-[#ece8ff] flex items-center justify-center text-[#7b61ff]">
+                                     <BarChart3 className="w-4 h-4" />
+                                   </div>
+                                   <span className="text-[9px] font-semibold text-[#5b6b8c] mt-1 leading-tight break-words">Detailed Feedback</span>
+                                 </div>
+                                 <div className="flex flex-col items-center text-center">
+                                   <div className="w-9 h-9 rounded-full bg-[#fff4d6] flex items-center justify-center text-[#f5a623]">
+                                     <Crown className="w-4 h-4" />
+                                   </div>
+                                   <span className="text-[9px] font-semibold text-[#5b6b8c] mt-1 leading-tight break-words">Premium Topics</span>
                                 </div>
                               </div>
                             </div>
@@ -1539,10 +1539,10 @@ export default function App() {
                               id="gallery-photo-input"
                             />
 
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h2 className="text-[26px] leading-none font-extrabold text-[#1b2559] tracking-tight">Profile</h2>
-                                <p className="text-[12px] text-[#8b95b7] mt-1.5 font-medium">Keep learning, keep growing!</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h2 className="text-[26px] leading-tight font-extrabold text-[#1b2559] tracking-tight">Profile</h2>
+                                <p className="text-[12px] text-[#8b95b7] mt-1.5 font-medium leading-snug">Keep learning, keep growing!</p>
                               </div>
                               <button
                                 onClick={() => setShowAuthModal(true)}
@@ -1574,11 +1574,11 @@ export default function App() {
 
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-start justify-between gap-2">
-                                    <div className="min-w-0">
-                                      <h3 className="text-[18px] font-extrabold text-[#1b2559] leading-tight truncate">
+                                    <div className="min-w-0 flex-1">
+                                      <h3 className="text-[18px] font-extrabold text-[#1b2559] leading-tight break-words">
                                         {isLoggedIn || userName !== 'Guest Learner' ? userName : 'Anand'}
                                       </h3>
-                                      <p className="text-[12px] text-[#8b95b7] mt-0.5">{selectedEnglishLevel === 'Intermediate' && !isLoggedIn ? 'Beginner' : selectedEnglishLevel}</p>
+                                      <p className="text-[12px] text-[#8b95b7] mt-0.5 leading-snug">{selectedEnglishLevel === 'Intermediate' && !isLoggedIn ? 'Beginner' : selectedEnglishLevel}</p>
                                     </div>
                                     <button
                                       onClick={openEditProfile}

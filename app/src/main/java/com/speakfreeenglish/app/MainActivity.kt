@@ -491,8 +491,9 @@ fun SearchingScreen(
                 },
                 color = TextSecondary,
                 fontSize = 12.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Clip
             )
         }
 
@@ -544,6 +545,8 @@ fun SearchingScreen(
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Clip,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -621,7 +624,10 @@ fun IncomingFriendCallScreen(
                 color = TextPrimary,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.fillMaxWidth()
             )
             Text(
                 text = "wants to practice with you",
@@ -854,8 +860,8 @@ fun CallingScreen(
                 color = TextPrimary,
                 fontSize = 19.sp,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                maxLines = 2,
+                overflow = TextOverflow.Clip,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
