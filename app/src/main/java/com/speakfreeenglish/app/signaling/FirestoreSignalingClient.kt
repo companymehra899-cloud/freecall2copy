@@ -72,10 +72,12 @@ class FirestoreSignalingClient(
     private var lastAppliedAnswerSdp: String? = null
     private var lastIncomingInviteKey: String? = null
     private var blockedPartnerIds: Set<String> = emptySet()
+    private var pairingInProgress = false
 
     private fun beginOperation(): Int {
         lastAppliedOfferSdp = null
         lastAppliedAnswerSdp = null
+        pairingInProgress = false
         return ++operationId
     }
 
@@ -339,14 +341,11 @@ class FirestoreSignalingClient(
      * Pair with an available peer found in the waiting room.
      */
     private fun pairWithPeer(peerDoc: DocumentSnapshot, op: Int) {
-        if (!isCurrent(op)) return
+        if (!isCurrent(op) || currentRoomId != null || pairingInProgress) return
         val peerId = peerDoc.id
         val generatedRoomId = UUID.randomUUID().toString()
-        isCaller = true
-        partnerId = peerId
-        currentRoomId = generatedRoomId
+        pairingInProgress = true
 
-        // Atomic transaction to claim the peer and avoid race conditions
         val peerRef = db.collection(COLLECTION_WAITING).document(peerId)
         db.runTransaction { transaction ->
             val snapshot = transaction.get(peerRef)
@@ -365,8 +364,14 @@ class FirestoreSignalingClient(
                 false
             }
         }.addOnSuccessListener { claimed ->
-            if (!isCurrent(op)) return@addOnSuccessListener
+            if (!isCurrent(op)) {
+                pairingInProgress = false
+                return@addOnSuccessListener
+            }
             if (claimed) {
+                isCaller = true
+                partnerId = peerId
+                currentRoomId = generatedRoomId
                 waitingPoolListener?.remove()
                 waitingPoolListener = null
                 val roomData = hashMapOf(
@@ -378,16 +383,23 @@ class FirestoreSignalingClient(
                 db.collection(COLLECTION_ROOMS).document(generatedRoomId)
                     .set(roomData)
                     .addOnSuccessListener {
+                        pairingInProgress = false
                         if (!isCurrent(op)) return@addOnSuccessListener
                         listenToRoomUpdates(generatedRoomId)
                         listenToRemoteCandidates(generatedRoomId, isCaller = true)
                         callback?.onMatchFound(generatedRoomId, isCaller = true, partnerId = peerId)
                     }
+                    .addOnFailureListener {
+                        pairingInProgress = false
+                        currentRoomId = null
+                        partnerId = null
+                        isCaller = false
+                    }
             } else {
-                registerSelfAsWaiting(op)
+                pairingInProgress = false
             }
         }.addOnFailureListener {
-            if (isCurrent(op)) registerSelfAsWaiting(op)
+            pairingInProgress = false
         }
     }
 
@@ -597,6 +609,7 @@ class FirestoreSignalingClient(
         lastAppliedOfferSdp = null
         lastAppliedAnswerSdp = null
         lastIncomingInviteKey = null
+        pairingInProgress = false
         val outgoingId = outgoingCalleeId
         detachAllListeners()
         db.collection(COLLECTION_WAITING).document(userId).delete()

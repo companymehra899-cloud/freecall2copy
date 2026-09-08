@@ -182,6 +182,13 @@ class AccountRepository(context: Context) {
         return updated
     }
 
+    fun bindGuestAuthId(authUid: String) {
+        if (authUid.isBlank()) return
+        val current = _currentUser.value
+        if (!current.isGuest || current.userId == authUid) return
+        saveUser(current.copy(userId = authUid))
+    }
+
     fun logoutToGuest(): UserAccount {
         val newGuestId = UUID.randomUUID().toString()
         val guest = UserAccount(

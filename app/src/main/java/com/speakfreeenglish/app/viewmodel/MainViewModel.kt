@@ -112,6 +112,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var pendingIncomingCallerId: String? = null
     private var activePartnerId: String? = null
     private var endingCall = false
+    private var webRtcReady = false
+    private var pendingRemoteOffer: SessionDescription? = null
+    private var pendingRemoteAnswer: SessionDescription? = null
+    private val pendingRemoteIce = mutableListOf<IceCandidate>()
+    private var signalingCleanupJob: Job? = null
 
     private var timerJob: Job? = null
     private var searchingTimerJob: Job? = null
@@ -137,6 +142,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val auth = FirebaseAuth.getInstance()
         val existing = auth.currentUser
         if (existing != null) {
+            repository.bindGuestAuthId(existing.uid)
             signalingClient.bindUser(existing.uid)
             onReady()
             return
@@ -145,6 +151,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .addOnSuccessListener { result ->
                 val uid = result.user?.uid
                 if (!uid.isNullOrBlank()) {
+                    repository.bindGuestAuthId(uid)
                     signalingClient.bindUser(uid)
                 }
                 onReady()
@@ -183,6 +190,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun tearDownSession() {
         stopCallDurationTimer()
         stopSearchingTimer()
+        signalingCleanupJob?.cancel()
+        signalingCleanupJob = null
+        webRtcReady = false
+        pendingRemoteOffer = null
+        pendingRemoteAnswer = null
+        pendingRemoteIce.clear()
         webRtcClient?.close()
         webRtcClient = null
         signalingClient.cancelOrDisconnect()
@@ -458,6 +471,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 viewModelScope.launch {
                     initWebRtc()
                     webRtcClient?.initPeerConnection()
+                    webRtcReady = true
+                    flushPendingRemoteSignaling()
 
                     if (isCaller) {
                         webRtcClient?.createOffer()
@@ -485,6 +500,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             override fun onDirectCallDeclined() {
                 stopSearchingTimer()
                 audioManager.stopAudio()
+                webRtcReady = false
+                pendingRemoteOffer = null
+                pendingRemoteAnswer = null
+                pendingRemoteIce.clear()
                 webRtcClient?.close()
                 webRtcClient = null
                 signalingClient.cancelOrDisconnect()
@@ -505,19 +524,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             override fun onOfferReceived(offer: SessionDescription) {
                 viewModelScope.launch {
-                    webRtcClient?.handleRemoteOfferAndCreateAnswer(offer)
+                    if (webRtcReady) {
+                        webRtcClient?.handleRemoteOfferAndCreateAnswer(offer)
+                    } else {
+                        pendingRemoteOffer = offer
+                    }
                 }
             }
 
             override fun onAnswerReceived(answer: SessionDescription) {
                 viewModelScope.launch {
-                    webRtcClient?.setRemoteAnswer(answer)
+                    if (webRtcReady) {
+                        webRtcClient?.setRemoteAnswer(answer)
+                    } else {
+                        pendingRemoteAnswer = answer
+                    }
                 }
             }
 
             override fun onRemoteIceCandidateReceived(candidate: IceCandidate) {
                 viewModelScope.launch {
-                    webRtcClient?.addRemoteIceCandidate(candidate)
+                    if (webRtcReady) {
+                        webRtcClient?.addRemoteIceCandidate(candidate)
+                    } else {
+                        pendingRemoteIce.add(candidate)
+                    }
                 }
             }
 
@@ -531,6 +562,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun initWebRtc() {
+        webRtcReady = false
         webRtcClient?.close()
         webRtcClient = WebRtcAudioClient(getApplication(), object : WebRtcAudioClient.Listener {
             override fun onLocalDescriptionCreated(desc: SessionDescription) {
@@ -551,10 +583,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 viewModelScope.launch {
                     _callState.value = CallState.IN_CALL
                     startCallDurationTimer()
-
-                    // CRITICAL ZERO-COST DELETION:
-                    // Purge Firestore documents the moment audio flows directly device-to-device
-                    signalingClient.cleanupFirestoreOnConnected()
+                    signalingCleanupJob?.cancel()
+                    signalingCleanupJob = viewModelScope.launch {
+                        delay(8000)
+                        signalingClient.cleanupFirestoreOnConnected()
+                    }
                 }
             }
 
@@ -574,6 +607,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         })
 
         webRtcClient?.startLocalAudio()
+    }
+
+    private fun flushPendingRemoteSignaling() {
+        pendingRemoteOffer?.let { offer ->
+            pendingRemoteOffer = null
+            webRtcClient?.handleRemoteOfferAndCreateAnswer(offer)
+        }
+        pendingRemoteAnswer?.let { answer ->
+            pendingRemoteAnswer = null
+            webRtcClient?.setRemoteAnswer(answer)
+        }
+        if (pendingRemoteIce.isNotEmpty()) {
+            pendingRemoteIce.forEach { webRtcClient?.addRemoteIceCandidate(it) }
+            pendingRemoteIce.clear()
+        }
     }
 
     /**
@@ -637,6 +685,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             repository.incrementCallStats(talkSeconds)
         }
 
+        signalingCleanupJob?.cancel()
+        signalingCleanupJob = null
+        webRtcReady = false
+        pendingRemoteOffer = null
+        pendingRemoteAnswer = null
+        pendingRemoteIce.clear()
         webRtcClient?.close()
         webRtcClient = null
 

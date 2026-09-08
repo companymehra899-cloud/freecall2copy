@@ -52,22 +52,6 @@ class WebRtcAudioClient(
                         .setPassword(customCred)
                         .createIceServer()
                 )
-            } else {
-                val user = "openrelayproject"
-                val pass = "openrelayproject"
-                listOf(
-                    "turn:openrelay.metered.ca:80",
-                    "turn:openrelay.metered.ca:80?transport=tcp",
-                    "turn:openrelay.metered.ca:443",
-                    "turns:openrelay.metered.ca:443?transport=tcp"
-                ).forEach { url ->
-                    servers.add(
-                        IceServer.builder(url)
-                            .setUsername(user)
-                            .setPassword(pass)
-                            .createIceServer()
-                    )
-                }
             }
             return servers
         }
